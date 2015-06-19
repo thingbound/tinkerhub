@@ -4,6 +4,7 @@ var debug = require('debug')('th.devices');
 
 var RemoteDevice = require('./remote');
 var LocalDevice = require('./local');
+var publicDevice = require('./public');
 
 function Registry(net) {
     EventEmitter.call(this);
@@ -21,7 +22,8 @@ function Registry(net) {
 util.inherits(Registry, EventEmitter);
 
 Registry.prototype._toPublicDevice = function(device) {
-    return device;
+    // TODO: Caching
+    return publicDevice(device);
 };
 
 Registry.prototype._onmessage = function(event) {
