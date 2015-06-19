@@ -150,6 +150,10 @@ Peer.prototype.pinged = function() {
 };
 
 Peer.prototype.send = function(type, payload) {
+    if(! this.client) {
+        // TODO: What do we when our peer is not yet reachable?
+        return;
+    }
     this.client.send(this.parent.id, type, payload);
 };
 

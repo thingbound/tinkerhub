@@ -7,7 +7,8 @@
     "debug": "^2.2.0",
     "empty-port": "0.0.1",
     "mdns": "~2.2.2",
-    "punt": "~2.2.0"
+    "punt": "~2.2.0",
+    "q": "~1.1.2"
   },
   "devDependencies": {}
 }
