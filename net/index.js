@@ -1,7 +1,7 @@
 
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
-var debug = require('debug')('th:net');
+var debug = require('debug')('th.net');
 
 var discovery = require('./discovery');
 var punt = require('punt');
@@ -106,18 +106,18 @@ Network.prototype._handleIncomingMessage = function(peerId, type, payload) {
 Network.prototype.broadcast = function(type, payload) {
     var self = this;
     Object.keys(this._peers).forEach(function(peerId) {
-        this._peers[peerId].send(type, payload);
+        self._peers[peerId].send(type, payload);
     });
 };
 
 Network.prototype.send = function(peer, type, payload) {
-    this._peer(id).send(type, payload);
+    this._peer(peer).send(type, payload);
 };
 
 function Peer(parent, id) {
     this.parent = parent;
     this.id = id;
-    this.debug = require('debug')('th:net:peer:' + id);
+    this.debug = require('debug')('th.net.peer:' + id);
 }
 
 Peer.prototype.setAddress = function(host, port) {
@@ -131,7 +131,7 @@ Peer.prototype.setAddress = function(host, port) {
 
     if(! hadClient) {
         // Emit a join event if this is the first time we see this peer
-        this.parent.emit('peerJoined', this.id);
+        this.parent.emit('peerConnected', this.id);
     }
 };
 
@@ -140,14 +140,12 @@ Peer.prototype.ping = function() {
 };
 
 Peer.prototype.pinged = function() {
-    this.debug('Resetting ping timeout');
-
     var self = this;
     clearTimeout(this._pingTimeout);
     this._pingTimeout = setTimeout(function() {
         self.debug('Expired due to missed ping, removing from peers');
         delete self.parent._peers[self.id];
-        self.parent.emit('peerLeft', self.id);
+        self.parent.emit('peerDisconnected', self.id);
     }, 10000);
 };
 
