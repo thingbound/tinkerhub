@@ -6,6 +6,9 @@ var RemoteDevice = require('./remote');
 var LocalDevice = require('./local');
 var publicDevice = require('./public');
 
+var collection = require('./collection');
+var weak = require('weak');
+
 function Registry(net) {
     EventEmitter.call(this);
 
@@ -13,6 +16,7 @@ function Registry(net) {
 
     this._localDevices = {};
     this._devices = {};
+    this._collections = [];
 
     net.on('message', this._onmessage.bind(this));
     net.on('peerConnected', this._sendDeviceListTo.bind(this));
@@ -22,8 +26,12 @@ function Registry(net) {
 util.inherits(Registry, EventEmitter);
 
 Registry.prototype._toPublicDevice = function(device) {
-    // TODO: Caching
-    return publicDevice(device);
+    if(device._public) {
+        return device._public;
+    }
+
+    device._public = publicDevice(device);
+    return device._public;
 };
 
 Registry.prototype._onmessage = function(event) {
@@ -68,10 +76,15 @@ Registry.prototype._registerDevice = function(def) {
     if(device) {
         device.metadata.def = def;
     } else {
-        device = new RemoteDevice(this._net, def);
+        this._devices[def.id] = device = new RemoteDevice(this._net, def);
     }
 
-    this.emit('deviceAvailable', this._toPublicDevice(device));
+    var publicDevice = this._toPublicDevice(device)
+    this._collections.forEach(function(c) {
+        c._addDevice(publicDevice);
+    });
+
+    this.emit('deviceAvailable', publicDevice);
 };
 
 Registry.prototype.register = function(id, instance) {
@@ -81,7 +94,12 @@ Registry.prototype.register = function(id, instance) {
 
     this._net.broadcast('device:available', device.metadata.def);
 
-    this.emit('deviceAvailable', this._toPublicDevice(device));
+    var publicDevice = this._toPublicDevice(device);
+    this._collections.forEach(function(c) {
+        c._addDevice(publicDevice);
+    });
+
+    this.emit('deviceAvailable', publicDevice);
 };
 
 Registry.prototype._removeDevice = function(device) {
@@ -91,7 +109,13 @@ Registry.prototype._removeDevice = function(device) {
     debug('Device ' + device.id + ' is no longer available');
 
     delete this._devices[device.id];
-    this.emit('deviceUnavailable', this._toPublicDevice(device));
+
+    var publicDevice = this._toPublicDevice(device);
+    this.emit('deviceUnavailable', publicDevice);
+
+    this._collections.forEach(function(c) {
+        c._removeDevice(publicDevice);
+    });
 };
 
 Registry.prototype._sendDeviceListTo = function(id) {
@@ -116,7 +140,12 @@ Registry.prototype._removeDevicesForPeer = function(peer) {
             debug('Device ' + id + ' is no longer available');
 
             delete this._devices[id];
-            this.emit('deviceUnavailable', this._toPublicDevice(device));
+            var publicDevice = this._toPublicDevice(device);
+            this.emit('deviceUnavailable', publicDevice);
+
+            this._collections.forEach(function(c) {
+                c._removeDevice(publicDevice);
+            });
         }
     }.bind(this));
 };
@@ -160,6 +189,35 @@ Registry.prototype._handleDeviceInvokeResult = function(message) {
     if(! device) return;
 
     device.receiveReply(message);
+};
+
+function makeCollectionRemover(registry, c) {
+    return function() {
+        var idx = registry._collections.indexOf(c);
+        if(idx >= 0) {
+            debug('Removing unused collection c' + c.metadata.id);
+            registry._collections.splice(idx, 1);
+        }
+    };
+}
+
+/**
+ * Get a dynamic collection for any devices that match the given filter
+ * function.
+ */
+Registry.prototype.collection = function(filter) {
+    var publicCollection = collection(filter);
+    var c = publicCollection._;
+    this._collections.push(c);
+
+    var self = this;
+    Object.keys(this._devices).forEach(function(key) {
+        c._addDevice(self._toPublicDevice(self._devices[key]));
+    });
+
+    weak(publicCollection, makeCollectionRemover(this, c));
+
+    return publicCollection;
 };
 
 module.exports = function(net) {

@@ -9,11 +9,13 @@ function RemoteDevice(net, def) {
 
     this._debug = require('debug')('th.device.' +  def.id);
     this._emitter = new EventEmitter();
+    this._listeners = [];
 
     this._promises = {};
 
     this.metadata = {
         def: def,
+        id: def.id,
         local: false,
         remote: true
     };
@@ -23,10 +25,17 @@ RemoteDevice.prototype.receiveEvent = function(event, payload) {
     this._debug('Emitting event', event, 'with payload', payload);
 
     this._emitter.emit(event, payload);
+    this._listeners.forEach(function(listener) {
+        listener(event, payload);
+    });
 };
 
 RemoteDevice.prototype.on = function(event, listener) {
     this._emitter.on(event, listener);
+};
+
+RemoteDevice.prototype.onAll = function(listener) {
+    this._listeners.push(listener);
 };
 
 RemoteDevice.prototype.call = function(action, args) {

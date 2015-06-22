@@ -8,6 +8,7 @@ function LocalDevice(parent, id, instance) {
     this._emitter = new EventEmitter();
 
     this._net = parent._net;
+    this._listeners = [];
     this.instance = instance;
 
     var def = {};
@@ -16,6 +17,7 @@ function LocalDevice(parent, id, instance) {
 
     this.metadata = {
         def: def,
+        id: def.id,
         local: true,
         remote: false
     };
@@ -31,10 +33,17 @@ LocalDevice.prototype.emit = function(event, payload) {
     });
 
     this._emitter.emit(event, payload);
+    this._listeners.forEach(function(listener) {
+        listener(event, payload);
+    });
 };
 
 LocalDevice.prototype.on = function(event, listener) {
     this._emitter.on(event, listener);
+};
+
+LocalDevice.prototype.onAll = function(listener) {
+    this._listeners.push(listener);
 };
 
 LocalDevice.prototype.call = function(action, args) {

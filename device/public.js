@@ -3,10 +3,14 @@ var Proxy = require('node-proxy');
 module.exports = function(device) {
     return Proxy.create({
         get: function(proxy, name) {
-            if(typeof device[name] !== 'undefined') {
-                return device[name];
-            } else if(name === 'inspect') {
+            if(name[0] === '_' || name === 'inspect') {
                 return undefined;
+            } else if(typeof device[name] !== 'undefined') {
+                var v = device[name];
+                if(typeof v === 'function') {
+                    return v.bind(device);
+                }
+                return v;
             }
 
             return function() {
