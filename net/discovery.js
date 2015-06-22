@@ -1,4 +1,4 @@
-var mdns = require('mdns');
+var polo = require('polo')();
 
 function toService(obj) {
     return {
@@ -9,41 +9,25 @@ function toService(obj) {
 }
 
 module.exports.browse = function(listener) {
-    var browser = mdns.createBrowser(mdns.udp('_tinkerhub'));
-    browser.on('serviceUp', function(service) {
-        if(! service.addresses) return;
+    polo.on('up', function(name, service) {
+        var match = name.match(/([a-z0-9]+)\.tinkerhub$/);
+        if(! match) return;
 
         listener({
             available: true,
-            service: toService(service)
+            service: {
+                name: match[1],
+                address: service.address,
+                host: service.host,
+                port: service.port
+            }
         });
     });
-    browser.on('serviceDown', function(service) {
-        if(! service.addresses) return;
-
-        listener({
-            available: false,
-            service: toService(service)
-        });
-    });
-    browser.start();
-
-    return {
-        stop: function() {
-            browser.stop();
-        }
-    };
 };
 
 module.exports.expose = function(port, name) {
-	var ad = mdns.createAdvertisement(mdns.udp('tinkerhub'), port, {
-        name: name
+    polo.put({
+        name: name + '.tinkerhub',
+        port: port
     });
-	ad.start();
-
-	return {
-        stop: function() {
-            ad.stop();
-        }
-    };
 };

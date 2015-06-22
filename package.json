@@ -6,8 +6,8 @@
   "dependencies": {
     "debug": "^2.2.0",
     "empty-port": "0.0.1",
-    "mdns": "~2.2.2",
     "node-proxy": "~0.8.0",
+    "polo": "^0.8.1",
     "punt": "~2.2.0",
     "q": "~1.1.2"
   },
