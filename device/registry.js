@@ -29,10 +29,10 @@ Registry.prototype._toPublicDevice = function(device) {
 Registry.prototype._onmessage = function(event) {
     debug('Received message', event);
     switch(event.type) {
-        case 'device':
+        case 'device:available':
             this._registerDevice(event.payload);
             break;
-        case 'device:disconnected':
+        case 'device:unavailable':
             this._removeDevice(event.payload);
             break;
         case 'device:event':
@@ -71,7 +71,7 @@ Registry.prototype._registerDevice = function(def) {
         device = new RemoteDevice(this._net, def);
     }
 
-    this.emit('deviceConnected', this._toPublicDevice(device));
+    this.emit('deviceAvailable', this._toPublicDevice(device));
 };
 
 Registry.prototype.register = function(id, instance) {
@@ -79,9 +79,9 @@ Registry.prototype.register = function(id, instance) {
 
     debug('New local device ' + id);
 
-    this._net.broadcast('device', device.metadata.def);
+    this._net.broadcast('device:available', device.metadata.def);
 
-    this.emit('deviceConnected', this._toPublicDevice(device));
+    this.emit('deviceAvailable', this._toPublicDevice(device));
 };
 
 Registry.prototype._removeDevice = function(device) {
@@ -91,7 +91,7 @@ Registry.prototype._removeDevice = function(device) {
     debug('Device ' + device.id + ' is no longer available');
 
     delete this._devices[device.id];
-    this.emit('deviceDisconnected', this._toPublicDevice(device));
+    this.emit('deviceUnavailable', this._toPublicDevice(device));
 };
 
 Registry.prototype._sendDeviceListTo = function(id) {
@@ -105,7 +105,7 @@ Registry.prototype._sendDeviceListTo = function(id) {
         // Skip sending device if we think it comes from the peer
         if(def.peer === id || def.owner === id) return;
 
-        this._net.send(id, 'device', def);
+        this._net.send(id, 'device:available', def);
     }.bind(this));
 };
 
@@ -116,7 +116,7 @@ Registry.prototype._removeDevicesForPeer = function(peer) {
             debug('Device ' + id + ' is no longer available');
 
             delete this._devices[id];
-            this.emit('deviceDisconnected', this._toPublicDevice(device));
+            this.emit('deviceUnavailable', this._toPublicDevice(device));
         }
     }.bind(this));
 };
