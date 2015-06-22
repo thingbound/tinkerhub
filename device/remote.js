@@ -6,15 +6,17 @@ var seq = 0;
 
 function RemoteDevice(net, def) {
     this._net = net;
-    this.def = def;
 
     this._debug = require('debug')('th.device.' +  def.id);
     this._emitter = new EventEmitter();
 
     this._promises = {};
 
-    this.local = false;
-    this.remote = true;
+    this.metadata = {
+        def: def,
+        local: false,
+        remote: true
+    };
 }
 
 RemoteDevice.prototype.receiveEvent = function(event, payload) {
@@ -35,8 +37,8 @@ RemoteDevice.prototype.call = function(action, args) {
 
     this._promises[id] = deferred;
 
-    this._net.send(this.def.peer, 'device:invoke', {
-        id: this.def.id,
+    this._net.send(this.metadata.def.peer, 'device:invoke', {
+        id: this.metadata.def.id,
         seq: id,
         action: action,
         arguments: args

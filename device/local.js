@@ -14,10 +14,11 @@ function LocalDevice(parent, id, instance) {
     def.id = id;
     def.peer = def.owner = this._net.id;
 
-    this.def = def;
-
-    this.local = true;
-    this.remote = false;
+    this.metadata = {
+        def: def,
+        local: true,
+        remote: false
+    };
 }
 
 LocalDevice.prototype.emit = function(event, payload) {

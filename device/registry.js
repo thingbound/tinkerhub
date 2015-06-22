@@ -54,8 +54,8 @@ Registry.prototype._registerDevice = function(def) {
     var registered = this._devices[def.id];
     if(registered) {
         // Check if we should update our previous registration
-        if(registered.def.owner === registered.def.peer &&
-            def.peer !== registered.def.peer)
+        var rd = registered.metadata.def;
+        if(rd.owner === rd.peer && def.peer !== rd.peer)
         {
             // The device is reachable via its owner, don't update from this peer
             return;
@@ -64,7 +64,12 @@ Registry.prototype._registerDevice = function(def) {
 
     debug('Found device ' + def.id + ' via peer ' + def.peer);
 
-    var device = this._devices[def.id] = new RemoteDevice(this._net, def);
+    var device = this._devices[def.id];
+    if(device) {
+        device.metadata.def = def;
+    } else {
+        device = new RemoteDevice(this._net, def);
+    }
 
     this.emit('deviceConnected', this._toPublicDevice(device));
 };
@@ -74,14 +79,14 @@ Registry.prototype.register = function(id, instance) {
 
     debug('New local device ' + id);
 
-    this._net.broadcast('device', device.def);
+    this._net.broadcast('device', device.metadata.def);
 
     this.emit('deviceConnected', this._toPublicDevice(device));
 };
 
 Registry.prototype._removeDevice = function(device) {
     var registered = this._devices[id];
-    if(registered.def.peer != device.peer) return;
+    if(! registered || registered.metadata.def.peer != device.peer) return;
 
     debug('Device ' + device.id + ' is no longer available');
 
@@ -95,17 +100,19 @@ Registry.prototype._sendDeviceListTo = function(id) {
     Object.keys(this._localDevices).forEach(function(dId) {
         var device = this._devices[dId];
 
-        // Skip sending device if we think it comes from the peer
-        if(device.def.peer === id || device.def.owner === id) return;
+        var def = device.metadata.def;
 
-        this._net.send(id, 'device', device.def);
+        // Skip sending device if we think it comes from the peer
+        if(def.peer === id || def.owner === id) return;
+
+        this._net.send(id, 'device', def);
     }.bind(this));
 };
 
 Registry.prototype._removeDevicesForPeer = function(peer) {
     Object.keys(this._devices).forEach(function(id) {
         var device = this._devices[id];
-        if(device.def.peer == peer) {
+        if(device.metadata.def.peer == peer) {
             debug('Device ' + id + ' is no longer available');
 
             delete this._devices[id];
