@@ -70,21 +70,27 @@ Registry.prototype._registerDevice = function(def) {
         }
     }
 
-    debug('Found device ' + def.id + ' via peer ' + def.peer);
+    if(registered) {
+        debug('Updated device ' + def.id + ' via peer ' + def.peer);
+    } else {
+        debug('Found device ' + def.id + ' via peer ' + def.peer);
+    }
 
     var device = this._devices[def.id];
     if(device) {
-        device.metadata.def = def;
+        device.metadata.updateDef(def);
     } else {
         this._devices[def.id] = device = new RemoteDevice(this._net, def);
     }
 
-    var publicDevice = this._toPublicDevice(device)
-    this._collections.forEach(function(c) {
-        c._addDevice(publicDevice);
-    });
+    if(! registered) {
+        var publicDevice = this._toPublicDevice(device);
+        this._collections.forEach(function(c) {
+            c._addDevice(publicDevice);
+        });
 
-    this.emit('deviceAvailable', publicDevice);
+        this.emit('deviceAvailable', publicDevice);
+    }
 };
 
 Registry.prototype.register = function(id, instance) {
@@ -218,6 +224,31 @@ Registry.prototype.collection = function(filter) {
     weak(publicCollection, makeCollectionRemover(this, c));
 
     return publicCollection;
+};
+
+/**
+ * Get a dynamic collection that contains devices which have all of the given
+ * tags.
+ *
+ * Types can be searched for by using the prefix `type:` and capabiltiies by
+ * using the prefix `cap:`.
+ */
+Registry.prototype.tagged = function() {
+    var tags = {};
+    var total = 0;
+    Array.prototype.forEach.call(arguments, function(tag) {
+        tags[tag] = true;
+        total++;
+    });
+
+    return this.collection(function(device) {
+        var hits = 0;
+        device.metadata.tags.forEach(function(tag) {
+            if(tags[tag]) hits++;
+        });
+
+        return hits == total;
+    });
 };
 
 module.exports = function(net) {

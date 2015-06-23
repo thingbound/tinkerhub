@@ -1,6 +1,7 @@
 
 var EventEmitter = require('events').EventEmitter;
 
+var metadata = require('./metadata');
 var Q = require('q');
 var seq = 0;
 
@@ -13,12 +14,7 @@ function RemoteDevice(net, def) {
 
     this._promises = {};
 
-    this.metadata = {
-        def: def,
-        id: def.id,
-        local: false,
-        remote: true
-    };
+    this.metadata = metadata(this, def);
 }
 
 RemoteDevice.prototype.receiveEvent = function(event, payload) {
