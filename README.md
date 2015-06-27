@@ -10,7 +10,7 @@ Tinkerhub will automatically connect to other instances on the same local
 network and make their devices available to the local instance. This is done
 automatically on `require('tinkerhub')`.
 
-```
+```javascript
 // Asynchronously connect to instances on the local network
 var th = require('tinkerhub');
 ```
@@ -20,7 +20,7 @@ var th = require('tinkerhub');
 Devices can join or leave the network at any time. It's possible to listen
 to `deviceAvailable` and `deviceUnavailable` to be notified when this happens.
 
-```
+```javascript
 th.devices.on('deviceAvailable', function(device) {
     console.log('New device', device);
 })
@@ -29,7 +29,7 @@ th.devices.on('deviceAvailable', function(device) {
 If you know the identifier of a given device you can fetch it via the `get`
 function.
 
-```
+```javascript
 var device = th.devices.get('deviceIdHere');
 console.log('Got ', device);
 ```
@@ -37,7 +37,7 @@ console.log('Got ', device);
 In most cases it's probably easier to use device collection to find devices.
 Collections can be created from tags or from a custom filter function.
 
-```
+```javascript
 // Get all devices
 var allDevices = th.devices.all();
 
@@ -60,7 +60,7 @@ Devices have metadata associated with them, which contains information about
 their unique identifier, their type and capabilities and the actions they
 support.
 
-```
+```javascript
 console.log(device.metadata.id); // "idOfDevice"
 console.log(device.metadata.name); // "Human-readable name if any"
 console.log(device.metadata.types); // [ 'light', 'otherType' ]
@@ -79,7 +79,7 @@ it might be that it support video.
 
 Devices  support events, which can easily be listened for via `on`.
 
-```
+```javascript
 // Start listening
 var handle = device.on('turnedOn', function() {
     // Device has been turned on
@@ -92,7 +92,7 @@ handle.stop();
 The same is true for collections, where an event will be trigged if any
 device in the collection emits an event:
 
-```
+```javascript
 th.devices.tagged('type:light').on('turnedOn', function() {
     // this refers to the device
     device.turnOff();
@@ -104,7 +104,7 @@ th.devices.tagged('type:light').on('turnedOn', function() {
 All devices support actions, which can be invoked on both devices and
 collections:
 
-```
+```javascript
 device.turnOn(); // Turn on the device asynchronously
 
 th.devices.tagged('type:light').turnOn(); // Turns on all devices
@@ -113,7 +113,7 @@ th.devices.tagged('type:light').turnOn(); // Turns on all devices
 Actions return promises (via [Q](http://documentup.com/kriskowal/q/)) that
 can be used to act on the result of the invocation.
 
-```
+```javascript
 device.status()
     .then(function(status) {
         console.log('status is', status);
@@ -136,7 +136,7 @@ that device ids are prefixed with their module name, `module:id` such as
 When a device is registered it is made available over the network, so devices
 should only be registered when they are actually available.
 
-```
+```javascript
 th.devices.register('test:uniqueId', {
     metadata: {
         name: 'Test Device',
@@ -181,7 +181,7 @@ system generated tags such as type tags and capability tags.
 This can be used to create groups of devices, such as all devices found in a
 certain room. This allows for things such as this:
 
-```
+```javascript
 // Fetch lights in the livingroom and turn the om
 th.devices.tagged('type:light', 'livingroom').turnOn();
 
@@ -194,7 +194,7 @@ console.log(th.devices.tagged('livingroom'));
 The device metadata object contains an API that can be used to the user defined
 tags of a device. Currently the prefixes `type:` and `cap:` are reserved.
 
-```
+```javascript
 console.log(device.metadata.tags); // Get all of the tags
 
 device.metadata.tag('tag1', ..., 'tagN'); // Add tags to the device
