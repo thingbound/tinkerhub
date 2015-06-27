@@ -37,9 +37,23 @@ function LocalDevice(parent, id, instance) {
         } else {
             def.capabilities = [];
         }
+
+        def.name = instance.metadata.name;
     }
 
     def.tags = storage.get('internal.device.' + id + '.tags') || [];
+
+    def.actions = {};
+    Object.keys(instance).forEach(function(funcName) {
+        var func = instance[funcName];
+        if(typeof func !== 'function') return;
+
+        def.actions[funcName] = {
+            argumentCount: func.length,
+            argumentTypes: func.__th_types || [],
+            returnType: func.__th_return
+        };
+    });
 
     this.metadata = metadata(this, def);
 }
@@ -48,7 +62,7 @@ LocalDevice.prototype.emit = function(event, payload) {
     this._debug('Emitting event', event, 'with payload', payload);
 
     this._net.broadcast('device:event', {
-        id: this.def.id,
+        id: this.metadata.def.id,
         event: event,
         payload: payload
     });
@@ -94,6 +108,16 @@ LocalDevice.prototype.call = function(action, args) {
     return promise;
 };
 
+LocalDevice.prototype._broadcastMetadataChange = function() {
+    this.metadata.updateDef(this.metadata.def);
+    this._net.broadcast('device:available', this.metadata.def);
+};
+
+LocalDevice.prototype._setName = function(name) {
+    this.metadata.def.name = name;
+    this._broadcastMetadataChange();
+};
+
 LocalDevice.prototype._addTags = function(tags) {
     var current = this.metadata.def.tags;
     Array.prototype.forEach.call(tags, function(tag) {
@@ -103,8 +127,7 @@ LocalDevice.prototype._addTags = function(tags) {
     }.bind(this));
 
     storage.put('internal.device.' + this.metadata.id + '.tags', current);
-    this.metadata.updateDef(this.metadata.def);
-    this._net.broadcast('device:available', this.metadata.def);
+    this._broadcastMetadataChange();
 };
 
 LocalDevice.prototype._removeTags = function(tags) {
@@ -117,8 +140,7 @@ LocalDevice.prototype._removeTags = function(tags) {
     }.bind(this));
 
     storage.put('internal.device.' + this.metadata.id + '.tags', current);
-    this.metadata.updateDef(this.metadata.def);
-    this._net.broadcast('device:available', this.metadata.def);
+    this._broadcastMetadataChange();
 };
 
 module.exports = LocalDevice;

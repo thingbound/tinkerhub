@@ -7,6 +7,10 @@ function Metadata(owner, def) {
     this.updateDef(def);
 }
 
+Metadata.prototype.setName = function(name) {
+    return this._owner.call('_setName', [ name ]);
+};
+
 Metadata.prototype.updateDef = function(def) {
     this.def = def;
 
@@ -23,6 +27,8 @@ Metadata.prototype.updateDef = function(def) {
             tags.push('cap:' + c);
         });
     }
+
+    tags.push(def.id);
 
     this.tags = tags;
 };
