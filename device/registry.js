@@ -96,6 +96,17 @@ Registry.prototype._registerDevice = function(def) {
 Registry.prototype.register = function(id, instance) {
     var device = this._localDevices[id] = this._devices[id] = new LocalDevice(this, id, instance);
 
+    device._remove = function() {
+        delete this._localDevices[id];
+
+        var publicDevice = this._toPublicDevice(device);
+        this.emit('deviceUnavailable', publicDevice);
+
+        this._collections.forEach(function(c) {
+            c._removeDevice(publicDevice);
+        });
+    }.bind(this);
+
     debug('New local device ' + id);
 
     this._net.broadcast('device:available', device.metadata.def);
@@ -106,6 +117,8 @@ Registry.prototype.register = function(id, instance) {
     });
 
     this.emit('deviceAvailable', publicDevice);
+
+    return device;
 };
 
 Registry.prototype._removeDevice = function(device) {
@@ -197,6 +210,13 @@ Registry.prototype._handleDeviceInvokeResult = function(message) {
     device.receiveReply(message);
 };
 
+Registry.prototype.get = function(id) {
+    var device = this._devices[id];
+    if(! device) return null;
+
+    return this._toPublicDevice(device);
+};
+
 function makeCollectionRemover(registry, c) {
     return function() {
         var idx = registry._collections.indexOf(c);
@@ -224,6 +244,13 @@ Registry.prototype.collection = function(filter) {
     weak(publicCollection, makeCollectionRemover(this, c));
 
     return publicCollection;
+};
+
+/**
+ * Get a collection for all devices available.
+ */
+Registry.prototype.all = function() {
+    return this.collection(function() { return true; });
 };
 
 /**
