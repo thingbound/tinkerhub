@@ -7,6 +7,7 @@
     "appdirectory": "^0.1.0",
     "debug": "^2.2.0",
     "empty-port": "0.0.1",
+    "mkdirp": "^0.5.1",
     "node-lmdb": "git+https://github.com/aholstenson/node-lmdb.git#patch-1",
     "node-proxy": "~0.9.0",
     "polo": "^0.8.1",
