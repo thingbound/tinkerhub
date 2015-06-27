@@ -4,6 +4,8 @@
   "main": "tinkerhub.js",
   "license": "MIT",
   "dependencies": {
+    "amp": "^0.3.1",
+    "amp-message": "^0.1.2",
     "appdirectory": "^0.1.0",
     "debug": "^2.2.0",
     "empty-port": "0.0.1",
@@ -11,7 +13,6 @@
     "node-lmdb": "git+https://github.com/aholstenson/node-lmdb.git#patch-1",
     "node-proxy": "~0.9.0",
     "polo": "^0.8.1",
-    "punt": "~2.2.0",
     "q": "~1.1.2",
     "weak": "^0.4.1"
   },

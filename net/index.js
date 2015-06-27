@@ -4,8 +4,11 @@ var util = require('util');
 var debug = require('debug')('th.net');
 
 var discovery = require('./discovery');
-var punt = require('punt');
 var emptyPort = require('empty-port');
+
+var net = require('net');
+var Message = require('amp-message');
+var Parser = require('amp').Stream;
 
 function Network() {
     EventEmitter.call(this);
@@ -33,11 +36,17 @@ Network.prototype.join = function() {
         self.port = port;
         debug('Starting local server at ' + port);
 
-    	self.server = punt.bind('0.0.0.0:' + port);
-        self.server.on('message', function(peer, type, message) {
-            // TODO: Do we need something from this.info?
-            self._handleIncomingMessage(peer, type, message);
+        self.server = net.createServer(function(socket) {
+            var parser = new Parser();
+            socket.pipe(parser);
+
+            parser.on('data', function(buf) {
+                var msg = new Message(buf);
+                self._handleIncomingMessage(msg.args[0], msg.args[1], msg.args[2]);
+            });
         });
+
+        self.server.listen(port);
 
     	self._stoppables.push(discovery.expose(port, self.id));
     });
@@ -121,18 +130,33 @@ function Peer(parent, id) {
 }
 
 Peer.prototype.setAddress = function(host, port) {
-    var hadClient = !!this.client;
-    this.client = punt.connect(host + ':' + port);
+    if(this.client) return;
+
+    this.client = net.connect({
+        host: host,
+        port: port
+    });
+
+    this.client.on('error', function(err) {
+        this.debug('Error occurred during connection', err);
+        this.remove();
+    }.bind(this));
 
     clearInterval(this._ping);
-    this._ping = setInterval(this.ping.bind(this), 2500);
+    this._ping = setInterval(this.ping.bind(this), 1500);
 
     this.ping();
 
-    if(! hadClient) {
-        // Emit a join event if this is the first time we see this peer
-        this.parent.emit('peerConnected', this.id);
-    }
+    // Emit a join event if this is the first time we see this peer
+    this.parent.emit('peerConnected', this.id);
+};
+
+Peer.prototype.remove = function() {
+    delete this.parent._peers[this.id];
+    this.parent.emit('peerDisconnected', this.id);
+
+    this.client.destroy();
+    this.client = null;
 };
 
 Peer.prototype.ping = function() {
@@ -146,7 +170,7 @@ Peer.prototype.pinged = function() {
         self.debug('Expired due to missed ping, removing from peers');
         delete self.parent._peers[self.id];
         self.parent.emit('peerDisconnected', self.id);
-    }, 10000);
+    }, 5000);
 };
 
 Peer.prototype.send = function(type, payload) {
@@ -154,7 +178,9 @@ Peer.prototype.send = function(type, payload) {
         // TODO: What do we when our peer is not yet reachable?
         return;
     }
-    this.client.send(this.parent.id, type, payload);
+
+    var msg = new Message([ this.parent.id, type, payload ]);
+    this.client.write(msg.toBuffer());
 };
 
 module.exports = function() {
