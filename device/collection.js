@@ -3,6 +3,7 @@
  */
 var Proxy = require('node-proxy');
 var EventEmitter = require('events').EventEmitter;
+var Q = require('q');
 
 function Collection(id, selector) {
     this._debug = require('debug')('th.collection.c' + id);
@@ -37,10 +38,15 @@ Collection.prototype._addDevice = function(device) {
     if(this._selector(device)) {
         this._debug('Adding device ' + device.metadata.id + ' to collection');
 
+        var idx = this._devices.indexOf(device);
+        if(idx >= 0) return;
+
         this._devices.push(device);
         device.onAll(function(event, payload) {
             this._events.emit(event, payload);
         }.bind(this));
+
+        this._events.emit('deviceAvailable', device);
     }
 };
 
@@ -52,6 +58,8 @@ Collection.prototype._removeDevice = function(device) {
         this._devices.splice(idx, 1);
 
         // TODO: Remove event listener?
+
+        this._events.emit('deviceUnavailable', device);
     }
 };
 
@@ -63,8 +71,12 @@ module.exports = function(selector) {
         get: function(proxy, name) {
             if(name === '_') {
                 return collection;
-            } else if(name[0] === '_' || name === 'inspect') {
+            } else if(name[0] === '_') {
                 return undefined;
+            } else if(name === 'inspect') {
+                return this._devices.map(function(device) {
+                    return device.metadata.id;
+                });
             } else if(typeof collection[name] !== 'undefined') {
                 var v = collection[name];
                 if(typeof v === 'function') {
@@ -74,9 +86,15 @@ module.exports = function(selector) {
             }
 
             return function() {
+                var deviceCopy = this._devices.slice();
                 var args = Array.prototype.slice.call(arguments);
-                return collection._devices.forEach(function(device) {
-                    device.call(name, args);
+                return Q.all(collection._devices.map(function(device) {
+                    return device.call(name, args);
+                })).then(function(results) {
+                    var result = {};
+                    for(var i=0; i<results.length; i++) {
+                        result[deviceCopy[i].metadata.id] = results[i];
+                    }
                 });
             };
         }
