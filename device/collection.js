@@ -2,13 +2,13 @@
  * Dynamic collection of devices.
  */
 var Proxy = require('node-proxy');
-var EventEmitter = require('events').EventEmitter;
+var EventEmitter = require('../events').EventEmitter;
 var Q = require('q');
 
 function Collection(id, selector) {
     this._debug = require('debug')('th.collection.c' + id);
     this._selector = selector;
-    this._events = new EventEmitter();
+    this._events = new EventEmitter(this);
     this._devices = [];
     this.metadata = {
         id: id
@@ -43,7 +43,7 @@ Collection.prototype._addDevice = function(device) {
 
         this._devices.push(device);
         device.onAll(function(event, payload) {
-            this._events.emit(event, payload);
+            this._events.emitWithContext(device, event, payload);
         }.bind(this));
 
         this._events.emit('deviceAvailable', device);

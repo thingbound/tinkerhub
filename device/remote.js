@@ -1,5 +1,5 @@
 
-var EventEmitter = require('events').EventEmitter;
+var EventEmitter = require('../events').EventEmitter;
 
 var metadata = require('./metadata');
 var Q = require('q');
@@ -9,7 +9,7 @@ function RemoteDevice(net, def) {
     this._net = net;
 
     this._debug = require('debug')('th.device.' +  def.id);
-    this._emitter = new EventEmitter();
+    this._emitter = new EventEmitter(this);
     this._listeners = [];
 
     this._promises = {};
@@ -31,7 +31,7 @@ RemoteDevice.prototype.on = function(event, listener) {
 };
 
 RemoteDevice.prototype.onAll = function(listener) {
-    this._listeners.push(listener);
+    this._emitter.onAny(listener);
 };
 
 RemoteDevice.prototype.call = function(action, args) {

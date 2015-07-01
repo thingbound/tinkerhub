@@ -1,4 +1,4 @@
-var EventEmitter = require('events').EventEmitter;
+var EventEmitter = require('../events').EventEmitter;
 
 var metadata = require('./metadata');
 var storage = require('../storage');
@@ -6,7 +6,7 @@ var Q = require('q');
 
 function LocalDevice(parent, id, instance) {
     this._debug = require('debug')('th.device.' +  id);
-    this._emitter = new EventEmitter();
+    this._emitter = new EventEmitter(this);
 
     this._net = parent._net;
     this._listeners = [];
@@ -78,7 +78,7 @@ LocalDevice.prototype.on = function(event, listener) {
 };
 
 LocalDevice.prototype.onAll = function(listener) {
-    this._listeners.push(listener);
+    this._emitter.onAny(listener);
 };
 
 LocalDevice.prototype.call = function(action, args) {

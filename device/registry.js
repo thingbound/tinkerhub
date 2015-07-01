@@ -1,4 +1,4 @@
-var EventEmitter = require('events').EventEmitter;
+var EventEmitter = require('../events').EventEmitter;
 var util = require('util');
 var debug = require('debug')('th.devices');
 
