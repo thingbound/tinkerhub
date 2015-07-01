@@ -86,7 +86,7 @@ module.exports = function(selector) {
             }
 
             return function() {
-                var deviceCopy = this._devices.slice();
+                var deviceCopy = collection._devices.slice();
                 var args = Array.prototype.slice.call(arguments);
                 return Q.all(collection._devices.map(function(device) {
                     return device.call(name, args);
