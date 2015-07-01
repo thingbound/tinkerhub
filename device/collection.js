@@ -90,11 +90,19 @@ module.exports = function(selector) {
                 var args = Array.prototype.slice.call(arguments);
                 return Q.all(collection._devices.map(function(device) {
                     return device.call(name, args);
-                })).then(function(results) {
+                }))
+                .then(function(results) {
                     var result = {};
                     for(var i=0; i<results.length; i++) {
                         result[deviceCopy[i].metadata.id] = results[i];
                     }
+                    return result;
+                })
+                .progress(function(data) {
+                    return {
+                        device: deviceCopy[data.index].metadata.id,
+                        progress: data
+                    };
                 });
             };
         }

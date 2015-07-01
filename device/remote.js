@@ -62,4 +62,9 @@ RemoteDevice.prototype.receiveReply = function(message) {
     delete this._promises[message.seq];
 };
 
+RemoteDevice.prototype.receiveProgress = function(message) {
+    var deferred = this._promises[message.seq];
+    deferred.notify(message.data);
+};
+
 module.exports = RemoteDevice;

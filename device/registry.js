@@ -49,6 +49,9 @@ Registry.prototype._onmessage = function(event) {
         case 'device:invoke':
             this._handleDeviceInvoke(event.peer, event.payload);
             break;
+        case 'device:invoke-progress':
+            this._handleDeviceInvokeProgress(event.payload);
+            break;
         case 'device:invoke-result':
             this._handleDeviceInvokeResult(event.payload);
             break;
@@ -199,8 +202,22 @@ Registry.prototype._handleDeviceInvoke = function(peer, message) {
                     seq: message.seq,
                     error: String(err)
                 });
-            });
+            }, function(progress) {
+                self._net.send(peer, 'device:invoke-progress', {
+                    id: message.id,
+                    seq: message.seq,
+                    data: progress
+                });
+            })
+            .done();
     }
+};
+
+Registry.prototype._handleDeviceInvokeProgress = function(message) {
+    var device = this._devices[message.id];
+    if(! device) return;
+
+    device.receiveProgress(message);
 };
 
 Registry.prototype._handleDeviceInvokeResult = function(message) {
