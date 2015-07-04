@@ -19,6 +19,10 @@ class Collection {
         this._listeners = {};
     }
 
+    get length() {
+        return this._devices.length;
+    }
+
     /**
      * Run the given function on every device we know about.
      */
