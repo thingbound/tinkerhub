@@ -1,8 +1,11 @@
 {
   "name": "tinkerhub",
   "version": "0.0.1",
-  "main": "tinkerhub.js",
   "license": "MIT",
+  "main": "dist/tinkerhub.js",
+  "scripts": {
+    "prepublish": "gulp build"
+  },
   "dependencies": {
     "amp": "^0.3.1",
     "amp-message": "^0.1.2",
@@ -16,5 +19,9 @@
     "q": "~1.1.2",
     "weak": "^0.4.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-sourcemaps": "^1.5.2"
+  }
 }
