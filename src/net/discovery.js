@@ -1,16 +1,11 @@
-var polo = require('polo')();
-
-function toService(obj) {
-    return {
-        name: obj.name,
-        host: obj.addresses[0],
-        port: obj.port
-    };
-}
+/**
+ * Discovery of peers running on the network.
+ */
+const polo = require('polo')();
 
 module.exports.browse = function(listener) {
     polo.on('up', function(name, service) {
-        var match = name.match(/([a-z0-9]+)\.tinkerhub$/);
+        const match = name.match(/([a-z0-9]+)\.tinkerhub$/);
         if(! match) return;
 
         listener({

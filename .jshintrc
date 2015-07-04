@@ -1,0 +1,16 @@
+{
+    "node": true,
+    "esnext": true,
+    "proto": true,
+    "unused": "vars",
+
+    "bitwise": true,
+    "eqeqeq": true,
+    "forin": true,
+    "freeze": true,
+    "noarg": true,
+    "noempty": true,
+    "nonbsp": true,
+
+    "quotmark": "single"
+}

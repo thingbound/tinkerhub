@@ -1,110 +1,169 @@
+const NProxy = require('node-proxy');
+const EventEmitter = require('../events').EventEmitter;
+const Q = require('q');
+
 /**
- * Dynamic collection of devices.
+ * Dynamic collection of devices. This is the internal API that is later
+ * proxied to make the public API a bit nicer.
  */
-var Proxy = require('node-proxy');
-var EventEmitter = require('../events').EventEmitter;
-var Q = require('q');
+class Collection {
+    constructor(id, selector) {
+        this._debug = require('debug')('th.collection.c' + id);
+        this._selector = selector;
+        this._events = new EventEmitter(this);
+        this._devices = [];
+        this.metadata = {
+            id: id
+        };
 
-function Collection(id, selector) {
-    this._debug = require('debug')('th.collection.c' + id);
-    this._selector = selector;
-    this._events = new EventEmitter(this);
-    this._devices = [];
-    this.metadata = {
-        id: id
-    };
-}
+        this._listeners = {};
+    }
 
-Collection.prototype.forEach = function(func) {
-    this._devices.forEach(func);
-};
+    /**
+     * Run the given function on every device we know about.
+     */
+    forEach(func) {
+        this._devices.forEach(func);
+        return this;
+    }
 
-Collection.prototype.listDevices = function(func) {
-    return this._devices;
-};
+    /**
+     * Get a list of all the devices in this collection. Will return a non-live
+     * copy of the device list.
+     */
+    listDevices() {
+        return this._devices.slice();
+    }
 
-Collection.prototype.on = function(event, listener) {
-    this._events.on(event, listener);
+    /**
+     * Listen for an event on any device that matches this collection. The
+     * listener will be invoked bound to the device that triggered the event.
+     *
+     * @param event The event to listen for
+     * @param listener The listener that will receive the event
+     */
+    on(event, listener) {
+        this._events.on(event, listener);
+    }
 
-    var self = this;
-    return {
-        stop: function() {
-            self._events.removeEventListener(event, listener);
-        }
-    };
-};
+    /**
+     * Stop listening for a certain event.
+     */
+    off(event, listener) {
+        this._events.off(event, listener);
+    }
 
-Collection.prototype._addDevice = function(device) {
-    if(this._selector(device)) {
+    /**
+     * Private: Add a new device to this collection.
+     */
+    _addDevice(device) {
+        if(! this._selector(device)) return;
+
         this._debug('Adding device ' + device.metadata.id + ' to collection');
 
-        var idx = this._devices.indexOf(device);
+        const idx = this._devices.indexOf(device);
         if(idx >= 0) return;
 
         this._devices.push(device);
-        device.onAll(function(event, payload) {
-            this._events.emitWithContext(device, event, payload);
-        }.bind(this));
+
+        const listener = (event, payload) => this._events.emitWithContext(device, event, payload);
+        device.onAll(listener);
+        this._listeners[device.metadata.id] = listener;
 
         this._events.emit('deviceAvailable', device);
     }
-};
 
-Collection.prototype._removeDevice = function(device) {
-    var idx = this._devices.indexOf(device);
-    if(idx >= 0) {
+    /**
+     * Private: Remove a device from this collection.
+     */
+    _removeDevice(device) {
+        const idx = this._devices.indexOf(device);
+        if(idx < 0) return;
+
         this._debug('Removing device ' + device.metadata.id + ' from collection');
 
         this._devices.splice(idx, 1);
 
-        // TODO: Remove event listener?
+        var listener = this._listeners[device.metadata.id];
+        device.offAny(listener);
+        delete this._listeners[device.metadata.id];
 
         this._events.emit('deviceUnavailable', device);
     }
-};
 
-var collectionId = 0;
+    /**
+     * Private: Create a function that will invoke an action on all of the
+     * devices in this collection.
+     */
+    _action(name) {
+        return () => {
+            // Create copies of the current device list and the arguments
+            const deviceCopy = this._devices.slice();
+            const args = Array.prototype.slice.call(arguments);
+
+            // Invoke the method on all of the devices and get their promises
+            const invoked = deviceCopy.map(device => device.call(name, args));
+
+            return Q.allSettled(invoked)
+                .then(results => {
+                    // Map the results to something a bit nicer
+                    const result = {};
+                    for(let i=0; i<results.length; i++) {
+                        let data = results[i];
+                        if(data.state === 'fulfilled') {
+                            data = {
+                                value: data.value
+                            };
+                        } else {
+                            data = {
+                                error: data.reason
+                            };
+                        }
+
+                        result[deviceCopy[i].metadata.id] = data;
+                    }
+                    return result;
+                })
+                .progress(data => {
+                    // Emit some progress data bound to the device id
+                    return {
+                        device: deviceCopy[data.index].metadata.id,
+                        progress: data
+                    };
+                });
+        };
+    }
+}
+
+let collectionId = 0;
+
+/**
+ * Create a new public collection using the given selector function.
+ *
+ * @param selector Function to use for determining if a device should be in
+ *  this collection.
+ */
 module.exports = function(selector) {
-    var collection = new Collection(collectionId++, selector);
+    const collection = new Collection(collectionId++, selector);
 
-    return Proxy.create({
+    return NProxy.create({
         get: function(proxy, name) {
             if(name === '_') {
                 return collection;
             } else if(name[0] === '_') {
                 return undefined;
             } else if(name === 'inspect') {
-                return this._devices.map(function(device) {
-                    return device.metadata.id;
-                });
+                return this._devices.map(device => device.metadata.id);
             } else if(typeof collection[name] !== 'undefined') {
-                var v = collection[name];
+                const v = collection[name];
                 if(typeof v === 'function') {
                     return v.bind(collection);
                 }
                 return v;
             }
 
-            return function() {
-                var deviceCopy = collection._devices.slice();
-                var args = Array.prototype.slice.call(arguments);
-                return Q.all(collection._devices.map(function(device) {
-                    return device.call(name, args);
-                }))
-                .then(function(results) {
-                    var result = {};
-                    for(var i=0; i<results.length; i++) {
-                        result[deviceCopy[i].metadata.id] = results[i];
-                    }
-                    return result;
-                })
-                .progress(function(data) {
-                    return {
-                        device: deviceCopy[data.index].metadata.id,
-                        progress: data
-                    };
-                });
-            };
+            // Get the action for this name
+            return collection._action(name);
         }
     });
 };

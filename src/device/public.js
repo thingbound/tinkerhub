@@ -1,7 +1,10 @@
-var Proxy = require('node-proxy');
+var NProxy = require('node-proxy');
 
+/**
+ * Create the public API for the given device.
+ */
 module.exports = function(device) {
-    return Proxy.create({
+    return NProxy.create({
         get: function(proxy, name) {
             if(name[0] === '_' || name === 'inspect') {
                 return undefined;
@@ -13,9 +16,7 @@ module.exports = function(device) {
                 return v;
             }
 
-            return function() {
-                return device.call(name, Array.prototype.slice.call(arguments));
-            };
+            return () => device.call(name, Array.prototype.slice.call(arguments));
         }
     });
 };
