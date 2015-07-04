@@ -36,15 +36,7 @@ class Network {
             this.port = port;
             debug('Starting local server at ' + port);
 
-            this.server = net.createServer(socket => {
-                const parser = new Parser();
-                socket.pipe(parser);
-
-                parser.on('data', buf => {
-                    const msg = new Message(buf);
-                    this._handleIncomingMessage(msg.args[0], msg.args[1], msg.args[2]);
-                });
-            });
+            this.server = net.createServer(this._setupSocket.bind(this));
 
             this.server.listen(port);
 
@@ -62,6 +54,16 @@ class Network {
      */
     leave() {
         this._stoppables.forEach(item => item.stop());
+    }
+
+    _setupSocket(socket) {
+        const parser = new Parser();
+        socket.pipe(parser);
+
+        parser.on('data', buf => {
+            const msg = new Message(buf);
+            this._handleIncomingMessage(socket, msg.args[0], msg.args[1], msg.args[2]);
+        });
     }
 
     _peer(id) {
@@ -90,9 +92,13 @@ class Network {
         }
     }
 
-    _handleIncomingMessage(peerId, type, payload) {
+    _handleIncomingMessage(socket, peerId, type, payload) {
         // Fetch the peer this message was from
         const peer = this._peer(peerId);
+        if(! peer.client) {
+            // Connect with the peer
+            peer.setClient(socket);
+        }
 
         // Reset the ping
         peer.pinged();
@@ -101,7 +107,7 @@ class Network {
         if(type === 'ping') return;
 
         this._events.emit('message', {
-            peer: peerId,
+            peer: peer.id,
             type: type,
             payload: payload
         });
@@ -132,15 +138,14 @@ class Peer {
         this.debug = require('debug')('th.net.peer:' + id);
     }
 
-    setAddress(host, port) {
+    setClient(client) {
         if(this.client) return;
 
-        this.client = net.connect({
-            host: host,
-            port: port
-        });
+        this.debug('Peer is now reachable');
 
-        this.client.on('error', err => {
+        this.client = client;
+
+        client.on('error', err => {
             this.debug('Error occurred during connection', err);
             this.remove();
         });
@@ -154,12 +159,30 @@ class Peer {
         this.parent._events.emit('peerConnected', this.id);
     }
 
+    setAddress(host, port) {
+        if(this.client) return;
+
+        var client = net.connect({
+            host: host,
+            port: port
+        });
+        client.on('connect', () => {
+            this.parent._setupSocket(client);
+            this.ping();
+        });
+
+        this.setClient(client);
+    }
+
     remove() {
         delete this.parent._peers[this.id];
         this.parent._events.emit('peerDisconnected', this.id);
 
         this.client.destroy();
         this.client = null;
+
+        clearInterval(this._ping);
+        clearTimeout(this._pingTimeout);
     }
 
     ping() {
@@ -178,6 +201,7 @@ class Peer {
     send(type, payload) {
         if(! this.client) {
             // TODO: What do we when our peer is not yet reachable?
+            this.debug('This peer can\'t be reached');
             return;
         }
 
