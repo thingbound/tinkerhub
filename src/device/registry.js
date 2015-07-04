@@ -162,7 +162,7 @@ class InternalRegistry {
      * Remove a device that is no longer available.
      */
     _removeDevice(device) {
-        const  registered = this._devices[id];
+        const registered = this._devices[device.id];
         if(! registered || registered.metadata.def.peer !== device.peer) return;
 
         debug('Device ' + device.id + ' is no longer available');
