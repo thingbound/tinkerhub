@@ -132,7 +132,7 @@ class Collection {
                     // Emit some progress data bound to the device id
                     return {
                         device: deviceCopy[data.index].metadata.id,
-                        progress: data
+                        progress: data.value
                     };
                 });
         };
