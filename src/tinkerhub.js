@@ -8,6 +8,7 @@ require('source-map-support').install();
 
 const net = require('./net');
 const storage = require('./storage');
+const autoload = require('./autoload');
 
 const network = net();
 network.join();
@@ -17,5 +18,7 @@ const registry = require('./device/registry')(network);
 module.exports = {
 	devices: registry,
 
-	storage: storage
+	storage: storage,
+
+	autoload: autoload
 };
