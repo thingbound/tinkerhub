@@ -3,6 +3,8 @@
     "esnext": true,
     "proto": true,
     "unused": "vars",
+    "module": true,
+    "undef": true,
 
     "bitwise": true,
     "eqeqeq": true,
