@@ -40,6 +40,8 @@ class Metadata {
         tags.push(def.id);
 
         this.tags = tags;
+
+        this.name = def.name || null;
     }
 
     /**
@@ -57,6 +59,6 @@ class Metadata {
     }
 }
 
-module.exports = function(id, def) {
-    return new Metadata(id, def);
+module.exports = function(owner, def) {
+    return new Metadata(owner, def);
 };
