@@ -107,6 +107,10 @@ class LocalDevice {
             return err.promise;
         }
 
+        if(typeof func !== 'function') {
+            return Q.when(func);
+        }
+
         let promise;
         const fr = func.apply(instance, args);
         if(fr && fr.then) {
