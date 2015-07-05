@@ -1,6 +1,7 @@
 const NProxy = require('node-proxy');
 const EventEmitter = require('../events').EventEmitter;
 const Q = require('q');
+const metadata = require('./metadata');
 
 /**
  * Dynamic collection of devices. This is the internal API that is later
@@ -12,9 +13,10 @@ class Collection {
         this._selector = selector;
         this._events = new EventEmitter(this);
         this._devices = [];
-        this.metadata = {
-            id: id
-        };
+        this.metadata = metadata(this, {
+            id: 'collection:' + id,
+            tags: [ 'type:collection' ]
+        });
 
         this._listeners = {};
     }
@@ -100,42 +102,48 @@ class Collection {
      * devices in this collection.
      */
     _action(name) {
-        return () => {
-            // Create copies of the current device list and the arguments
-            const deviceCopy = this._devices.slice();
-            const args = Array.prototype.slice.call(arguments);
+        return function() {
+            return this.call(name, Array.prototype.slice.call(arguments));
+        }.bind(this);
+    }
 
-            // Invoke the method on all of the devices and get their promises
-            const invoked = deviceCopy.map(device => device.call(name, args));
+    /**
+     * Call a specific action for all of the devices.
+     */
+    call(action, args) {
+        // Create copies of the current device list and the arguments
+        const deviceCopy = this._devices.slice();
 
-            return Q.allSettled(invoked)
-                .then(results => {
-                    // Map the results to something a bit nicer
-                    const result = {};
-                    for(let i=0; i<results.length; i++) {
-                        let data = results[i];
-                        if(data.state === 'fulfilled') {
-                            data = {
-                                value: data.value
-                            };
-                        } else {
-                            data = {
-                                error: data.reason
-                            };
-                        }
+        // Invoke the method on all of the devices and get their promises
+        const invoked = deviceCopy.map(device => device.call(action, args));
 
-                        result[deviceCopy[i].metadata.id] = data;
+        return Q.allSettled(invoked)
+            .then(results => {
+                // Map the results to something a bit nicer
+                const result = {};
+                for(let i=0; i<results.length; i++) {
+                    let data = results[i];
+                    if(data.state === 'fulfilled') {
+                        data = {
+                            value: data.value
+                        };
+                    } else {
+                        data = {
+                            error: data.reason
+                        };
                     }
-                    return result;
-                })
-                .progress(data => {
-                    // Emit some progress data bound to the device id
-                    return {
-                        device: deviceCopy[data.index].metadata.id,
-                        progress: data.value
-                    };
-                });
-        };
+
+                    result[deviceCopy[i].metadata.id] = data;
+                }
+                return result;
+            })
+            .progress(data => {
+                // Emit some progress data bound to the device id
+                return {
+                    device: deviceCopy[data.index].metadata.id,
+                    progress: data.value
+                };
+            });
     }
 }
 
