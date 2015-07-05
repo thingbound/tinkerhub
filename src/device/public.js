@@ -16,7 +16,9 @@ module.exports = function(device) {
                 return v;
             }
 
-            return () => device.call(name, Array.prototype.slice.call(arguments));
+            return function() {
+                return device.call(name, Array.prototype.slice.call(arguments));
+            };
         }
     });
 };
