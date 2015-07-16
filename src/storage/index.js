@@ -40,7 +40,30 @@ class Storage {
         var data = tx.getString(this._db, path);
         tx.commit();
 
-        return data ? JSON.parse(data) : null;
+        try {
+            return data ? JSON.parse(data) : null;
+        } catch(ex) {
+            return null;
+        }
+    }
+
+    sub(path) {
+        return new SubStorage(this, path);
+    }
+}
+
+class SubStorage {
+    constructor(storage, path) {
+        this._storage = storage;
+        this._path = path;
+    }
+
+    put(path, data) {
+        return this._storage.put(this._path + '/' + path, data);
+    }
+
+    get(path) {
+        return this._storage.get(this._path + '/' + path);
     }
 }
 
