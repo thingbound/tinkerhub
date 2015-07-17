@@ -7,7 +7,7 @@
 class EventEmitter {
     constructor(defaultCtx) {
         this._listeners = {};
-        this._anyListeners = {};
+        this._anyListeners = [];
 
         this._context = defaultCtx || this;
     }
@@ -45,9 +45,8 @@ class EventEmitter {
      * @param eventName The event to listen for
      * @param listener The function that will be triggered
      */
-    onAny(eventName, listener) {
-        var listeners = this._anyListeners[eventName] || (this._anyListeners[eventName] = []);
-        listeners.push(listener);
+    onAny(listener) {
+        this._anyListeners.push(listener);
     }
 
     /**
@@ -57,13 +56,10 @@ class EventEmitter {
      * @param listener The function that should be removed
      */
     offAny(eventName, listener) {
-        var listeners = this._anyListeners[eventName];
-        if(! listeners) return;
-
-        var idx = listeners.indexOf(listener);
+        var idx = this._anyListeners.indexOf(listener);
         if(idx < 0) return;
 
-        listeners.splice(idx, 1);
+        this._anyListeners.splice(idx, 1);
     }
 
     /**
@@ -82,12 +78,9 @@ class EventEmitter {
             });
         }
 
-        listeners = this._anyListeners[event];
-        if(listeners) {
-            listeners.forEach(function(listener) {
-                listener.apply(ctx, allArgs);
-            });
-        }
+        this._anyListeners.forEach(function(listener) {
+            listener.apply(ctx, allArgs);
+        });
     }
 
     /**
@@ -96,8 +89,8 @@ class EventEmitter {
      * registered listeners.
      */
     emitWithContext(ctx, event) {
-        var allArgs = arguments;
-        var args = Array.prototype.slice.call(arguments).slice(1);
+        var allArgs = Array.prototype.slice.call(arguments, 1);
+        var args = Array.prototype.slice.call(arguments, 2);
 
         var listeners = this._listeners[event];
         if(listeners) {
@@ -106,12 +99,9 @@ class EventEmitter {
             });
         }
 
-        listeners = this._anyListeners[event];
-        if(listeners) {
-            listeners.forEach(function(listener) {
-                listener.apply(ctx, allArgs);
-            });
-        }
+        this._anyListeners.forEach(function(listener) {
+            listener.apply(ctx, allArgs);
+        });
     }
 }
 
