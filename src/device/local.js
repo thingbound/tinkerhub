@@ -2,6 +2,7 @@ var EventEmitter = require('../events').EventEmitter;
 
 var metadata = require('./metadata');
 var storage = require('../storage');
+var definition = require('../utils/definition');
 var Q = require('q');
 
 /**
@@ -48,9 +49,9 @@ class LocalDevice {
         def.tags = storage.get('internal.device.' + id + '.tags') || [];
 
         def.actions = {};
-        Object.keys(instance).forEach(funcName => {
-            var func = instance[funcName];
-            if(typeof func !== 'function') return;
+        definition(instance).forEach(funcName => {
+            if(funcName[0] === '_' || funcName === 'metadata') return;
+            const func = instance[funcName];
 
             def.actions[funcName] = {
                 argumentCount: func.length,
