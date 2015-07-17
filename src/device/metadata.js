@@ -42,6 +42,8 @@ class Metadata {
         this.tags = tags;
 
         this.name = def.name || null;
+
+        this.actions = def.actions || [];
     }
 
     /**
