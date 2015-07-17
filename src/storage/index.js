@@ -71,3 +71,5 @@ var dirs = new AppDirectory('tinkerhub');
 var dbPath = path.join(dirs.userData(), 'db');
 
 module.exports = new Storage(dbPath);
+module.exports.appdata = dirs.userData();
+module.exports.configdir = dirs.userConfig();
