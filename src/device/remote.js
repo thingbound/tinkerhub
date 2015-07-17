@@ -55,6 +55,8 @@ class RemoteDevice {
 
     receiveReply(message) {
         const deferred = this._promises[message.seq];
+        if(! deferred) return;
+
         if(message.error) {
             deferred.reject(new Error(message.error));
         } else {
@@ -66,6 +68,11 @@ class RemoteDevice {
     receiveProgress(message) {
         const deferred = this._promises[message.seq];
         deferred.notify(message.data);
+    }
+
+    _remove() {
+        Object.keys(this._promises)
+            .forEach(p => this._promises[p].reject('Device is no longer available'));
     }
 }
 

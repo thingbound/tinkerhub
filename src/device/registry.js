@@ -173,6 +173,8 @@ class InternalRegistry {
         this._events.emit('deviceUnavailable', publicDevice);
 
         this._collections.forEach(c => c._removeDevice(publicDevice));
+
+        registered._remove();
     }
 
     /**
@@ -200,13 +202,7 @@ class InternalRegistry {
         Object.keys(this._devices).forEach(function(id) {
             const device = this._devices[id];
             if(device.metadata.def.peer === peer) {
-                debug('Device ' + id + ' is no longer available');
-
-                delete this._devices[id];
-                const publicDevice = this._toPublicDevice(device);
-                this._events.emit('deviceUnavailable', publicDevice);
-
-                this._collections.forEach(c => c._removeDevice(publicDevice));
+                this._removeDevice(device);
             }
         }.bind(this));
     }
