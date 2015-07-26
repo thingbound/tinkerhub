@@ -23,6 +23,17 @@ class LocalDevice {
         def.peer = def.owner = this._net.id;
 
         this.metadata = metadata(this, def);
+
+        // Create our type converters
+        this._actions = {};
+        Object.keys(def.actions).forEach(key => {
+            const action = def.actions[key];
+            const argumentConverter = types.createConversion(action.arguments);
+
+            this._actions[key] = {
+                arguments: argumentConverter
+            };
+        });
     }
 
     emit(event, payload) {
@@ -74,8 +85,10 @@ class LocalDevice {
             return Q.when(func);
         }
 
+        const def = this._actions[action];
+
         let promise;
-        const fr = func.apply(instance, args);
+        const fr = func.apply(instance, def ? def.arguments(args) : args);
         if(fr && fr.then) {
             promise = fr;
         } else {

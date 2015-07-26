@@ -10,6 +10,10 @@ module.exports = function(types) {
     types.registerDeviceCapability('power')
         .requireCapability('state')
         .action('turnOn').returns('object', 'The new state').done()
-        .action('turnOff').returns('object', 'Thew new state').done()
+        .action('turnOff').returns('object', 'The new state').done()
+        .action('setPower')
+            .argument('boolean', 'On/off')
+            .returns('object', 'The new state')
+            .done()
         .done();
 };

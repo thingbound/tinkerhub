@@ -1,9 +1,10 @@
 const builders = require('./defbuilder');
 const definition = require('../../utils/definition');
 
+const IDENTITY = function(input) { return input; };
 const NO_CONVERSION = {
-    toWire: function(input) { return input; },
-    fromWire: function(input) { return input; }
+    convert: IDENTITY,
+    toJSON: IDENTITY
 };
 
 class TypeRegistry {
@@ -16,15 +17,15 @@ class TypeRegistry {
 
     registerType(type, def) {
         if(! def) {
-            throw 'A definition with toWire and fromWire needed for type ' + type;
+            throw 'A definition with convert (and optionally toJSON) needed for type ' + type;
         }
 
-        if(! def.toWire) {
-            throw 'toWire function required for type ' + type;
+        if(! def.convert) {
+            throw 'convert function required for type ' + type;
         }
 
-        if(! def.fromWire) {
-            throw 'fromWire function required for type ' + type;
+        if(! def.toJSON) {
+            def.toJSON = IDENTITY;
         }
 
         this.types[type] = def;
@@ -204,26 +205,46 @@ class TypeRegistry {
         return def;
     }
 
-    createToWireForArray(types) {
-        const converters = [];
-        types.forEach(t => converters.push(this.types[t]));
-        return function(data) {
-            return data.map((value, idx) => {
-                const converter = converters[idx] || NO_CONVERSION;
-                return converter.toWire(value);
+    createToJSON(types) {
+        if(Array.isArray(types)) {
+            const converters = types.map(t => {
+                if(t.type) t = t.type;
+                return this.types[t];
             });
-        };
+
+            return function(data) {
+                return Array.prototype.map.call(data, (value, idx) => {
+                    const converter = converters[idx] || NO_CONVERSION;
+                    return converter.toJSON(value);
+                });
+            };
+        } else {
+            const converter = this.types[types] || NO_CONVERSION;
+            return function(data) {
+                return converter.toJSON(data);
+            };
+        }
     }
 
-    createFromWireForArray(types) {
-        const converters = [];
-        types.forEach(t => converters.push(this.types[t]));
-        return function(data) {
-            return data.map((value, idx) => {
-                const converter = converters[idx] || NO_CONVERSION;
-                return converter.fromWire(value);
+    createConversion(types) {
+        if(Array.isArray(types)) {
+            const converters = types.map(t => {
+                if(t.type) t = t.type;
+                return this.types[t];
             });
-        };
+
+            return function(data) {
+                return Array.prototype.map.call(data, (value, idx) => {
+                    const converter = converters[idx] || NO_CONVERSION;
+                    return converter.convert(value);
+                });
+            };
+        } else {
+            const converter = this.types[types] || NO_CONVERSION;
+            return function(data) {
+                return converter.convert(data);
+            };
+        }
     }
 }
 
@@ -231,11 +252,47 @@ const types = module.exports = new TypeRegistry();
 
 // Register the default type conversions
 types.registerType('mixed', NO_CONVERSION);
-types.registerType('boolean', NO_CONVERSION);
-types.registerType('number', NO_CONVERSION);
-types.registerType('string', NO_CONVERSION);
 types.registerType('object', NO_CONVERSION);
-types.registerType('percentage', NO_CONVERSION);
+
+types.registerType('boolean', {
+    convert: function(value) {
+        if(typeof value === 'boolean') return value;
+
+        value = String(value).toLowerCase();
+        switch(value) {
+            case 'true':
+            case 'yes':
+            case '1':
+                return true;
+            default:
+                return false;
+        }
+    }
+});
+
+types.registerType('number', {
+    convert: function(value) {
+        if(typeof value === 'number') return value;
+
+        return parseFloat(value);
+    }
+});
+
+types.registerType('string', {
+    convert: function(value) {
+        return String(value);
+    }
+});
+
+types.registerType('percentage',  {
+    convert: function(value) {
+        if(typeof value === 'number') return value;
+
+        value = parseFloat(value);
+
+        return value < 0 ? 0 : (value > 100 ? 100 : value);
+    }
+});
 
 // Register any builtin device types and capabilities
 require('./builtin')(types);
