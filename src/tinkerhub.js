@@ -14,9 +14,12 @@ const network = net();
 network.join();
 
 const registry = require('./device/registry')(network);
+const types = require('./device/types/registry');
 
 module.exports = {
 	devices: registry,
+
+	types: types,
 
 	storage: storage,
 

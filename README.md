@@ -172,6 +172,58 @@ A name for the device can also be defined via the `name` property.
 Anything prefixed with `_` will be treated as private and will not be invokable
 over the network.
 
+### Types and capabilities
+
+Tinkerhub supports registering contracts on how different types of devices work.
+This is used to create a uniform API for devices of the same type, for example
+a device that is a light can always be turned on or off.
+
+Certain capabilities also have contracts that apply regardless of the device type,
+these are currently `state` and `power`.
+
+These contracts are checked when a device is registered and Tinkerhub will
+refuse to register the device if it finds any errors.
+
+Registration of new types can be done via the type registry, here is an example
+of a type `cookie-jar`:
+
+```javascript
+th.types.registerDeviceType('cookie-jar')
+    .action('open').done()
+    .action('close').done()
+    .action('setOpen').argument('boolean', 'If the jar should be open').done()
+    .action('isOpen').returns('boolean', 'If the jar is open or not').done()
+    .done();
+```
+
+It is possible to specify that certain actions are only available when the
+device also has a certain capability as well as enforcing that a certain
+device type always has a capability. This is how one might define a light that
+may be dimmable:
+
+```javascript
+th.types.registerDeviceType('light')
+    .requireCapability('state', 'power')
+    .when('dimmable')
+        .action('setBrightness')
+            .argument('percentage', 'Brightness Percentage')
+            .returns('object', 'The new state')
+            .done()
+        .action('increaseBrightness')
+            .argument('percentage', 'Percentage to increase')
+            .returns('object', 'The new state')
+            .done()
+        .action('decreaseBrightness')
+            .argument('percentage', 'Percentage to decrease')
+            .returns('object', 'The new state')
+            .done()
+        .done()
+    .done();
+```
+
+Any `light`-devices registered that define that they have the capability
+`dimmable` will then be checked so that the dimmable actions are defined.
+
 ## Tags
 
 Devices support user defined tags via their metadata. These tags are persisted
