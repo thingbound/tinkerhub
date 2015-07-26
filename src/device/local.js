@@ -1,8 +1,8 @@
 var EventEmitter = require('../events').EventEmitter;
+var types = require('./types/registry');
 
 var metadata = require('./metadata');
 var storage = require('../storage');
-var definition = require('../utils/definition');
 var Q = require('q');
 
 /**
@@ -18,47 +18,9 @@ class LocalDevice {
         this.instance = instance;
 
         // Create the definition of this device
-        let def = {};
-        def.id = id;
-        def.peer = def.owner = this._net.id;
-
-        if(instance.metadata) {
-            if(instance.metadata.type) {
-                if(Array.isArray(instance.metadata.type)) {
-                    def.types = instance.metadata.type;
-                } else {
-                    def.types = [ String(instance.metadata.type) ];
-                }
-            } else {
-                def.types = [];
-            }
-
-            if(instance.metadata.capabilities) {
-                if(Array.isArray(instance.metadata.capabilities)) {
-                    def.capabilities = instance.metadata.capabilities;
-                } else {
-                    def.capabilities = [ String(instance.metadata.capabilities) ];
-                }
-            } else {
-                def.capabilities = [];
-            }
-
-            def.name = instance.metadata.name;
-        }
-
+        let def = types.describeDevice(id, instance);
         def.tags = storage.get('internal.device.' + id + '.tags') || [];
-
-        def.actions = {};
-        definition(instance).forEach(funcName => {
-            if(funcName[0] === '_' || funcName === 'metadata') return;
-            const func = instance[funcName];
-
-            def.actions[funcName] = {
-                argumentCount: func.length,
-                argumentTypes: func.__th_types || [],
-                returnType: func.__th_return
-            };
-        });
+        def.peer = def.owner = this._net.id;
 
         this.metadata = metadata(this, def);
     }
