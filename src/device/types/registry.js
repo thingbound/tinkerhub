@@ -63,6 +63,8 @@ class TypeRegistry {
 
         for(let i=0; i<types.length; i++) {
             const type = this.deviceTypes[types[i]];
+            if(! type) continue;
+
             const localCap = type.capabilities.local[name];
 
             if(localCap) return localCap;
