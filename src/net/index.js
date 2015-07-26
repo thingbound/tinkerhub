@@ -178,8 +178,10 @@ class Peer {
         delete this.parent._peers[this.id];
         this.parent._events.emit('peerDisconnected', this.id);
 
-        this.client.destroy();
-        this.client = null;
+        if(this.client) {
+            this.client.destroy();
+            this.client = null;
+        }
 
         clearInterval(this._ping);
         clearTimeout(this._pingTimeout);
@@ -193,8 +195,7 @@ class Peer {
         clearTimeout(this._pingTimeout);
         this._pingTimeout = setTimeout(() => {
             this.debug('Expired due to missed ping, removing from peers');
-            delete this.parent._peers[this.id];
-            this.parent._events.emit('peerDisconnected', this.id);
+            this.remove();
         }, 5000);
     }
 
