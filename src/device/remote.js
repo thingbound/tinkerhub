@@ -79,7 +79,7 @@ class RemoteDevice {
         if(message.error) {
             promise.deferred.reject(new Error(message.error));
         } else {
-            const result = promise.action ? promise.action.resultFromJSON(message.result) : promise.action;
+            const result = promise.action ? promise.action.resultFromJSON(message.result) : message.result;
             promise.deferred.resolve(result);
         }
         delete this._promises[message.seq];
