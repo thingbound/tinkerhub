@@ -1,5 +1,6 @@
 
 var EventEmitter = require('../events').EventEmitter;
+var types = require('./types/registry');
 
 var metadata = require('./metadata');
 var Q = require('q');
@@ -16,6 +17,19 @@ class RemoteDevice {
         this._promises = {};
 
         this.metadata = metadata(this, def);
+
+        // Create our type converters
+        this._actions = {};
+        Object.keys(def.actions).forEach(key => {
+            const action = def.actions[key];
+            const argumentConverter = types.createToJSON(action.arguments);
+            const resultTypeConverter = types.createConversion(action.returnType);
+
+            this._actions[key] = {
+                arguments: argumentConverter,
+                resultFromJSON: resultTypeConverter
+            };
+        });
     }
 
     receiveEvent(event, payload) {
@@ -41,38 +55,46 @@ class RemoteDevice {
         const id = seq++;
         if(seq > 10000) seq = 0;
 
-        this._promises[id] = deferred;
+        const def = this._actions[action];
+
+        this._promises[id] = {
+            action: def,
+            deferred: deferred
+        };
 
         this._net.send(this.metadata.def.peer, 'device:invoke', {
             id: this.metadata.def.id,
             seq: id,
             action: action,
-            arguments: args
+            arguments: def ? def.arguments(args): args
         });
 
         return deferred.promise;
     }
 
     receiveReply(message) {
-        const deferred = this._promises[message.seq];
-        if(! deferred) return;
+        const promise = this._promises[message.seq];
+        if(! promise) return;
 
         if(message.error) {
-            deferred.reject(new Error(message.error));
+            promise.deferred.reject(new Error(message.error));
         } else {
-            deferred.resolve(message.result);
+            const result = promise.action ? promise.action.resultFromJSON(message.result) : promise.action;
+            promise.deferred.resolve(result);
         }
         delete this._promises[message.seq];
     }
 
     receiveProgress(message) {
-        const deferred = this._promises[message.seq];
-        deferred.notify(message.data);
+        const promise = this._promises[message.seq];
+        if(! promise) return;
+
+        promise.deferred.notify(message.data);
     }
 
     _remove() {
         Object.keys(this._promises)
-            .forEach(p => this._promises[p].reject('Device is no longer available'));
+            .forEach(p => this._promises[p].deferred.reject('Device is no longer available'));
     }
 }
 

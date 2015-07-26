@@ -229,22 +229,22 @@ class InternalRegistry {
                 error: 'Unknown Device'
             });
         } else {
-            var self = this;
+            const def = device._actions[message.action];
             device.call(message.action, message.arguments)
                 .then(value => {
-                    self._net.send(peer, 'device:invoke-result', {
+                    this._net.send(peer, 'device:invoke-result', {
                         id: message.id,
                         seq: message.seq,
-                        result: value
+                        result: def ? def.resultToJSON(value) : value
                     });
                 }, err => {
-                    self._net.send(peer, 'device:invoke-result', {
+                    this._net.send(peer, 'device:invoke-result', {
                         id: message.id,
                         seq: message.seq,
                         error: String(err)
                     });
                 }, progress => {
-                    self._net.send(peer, 'device:invoke-progress', {
+                    this._net.send(peer, 'device:invoke-progress', {
                         id: message.id,
                         seq: message.seq,
                         data: progress

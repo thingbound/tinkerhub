@@ -29,9 +29,11 @@ class LocalDevice {
         Object.keys(def.actions).forEach(key => {
             const action = def.actions[key];
             const argumentConverter = types.createConversion(action.arguments);
+            const returnType = types.createToJSON(action.returnType);
 
             this._actions[key] = {
-                arguments: argumentConverter
+                arguments: argumentConverter,
+                resultToJSON: returnType
             };
         });
     }

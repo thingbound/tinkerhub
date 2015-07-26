@@ -219,6 +219,7 @@ class TypeRegistry {
                 });
             };
         } else {
+            if(types.type) types = types.type;
             const converter = this.types[types] || NO_CONVERSION;
             return function(data) {
                 return converter.toJSON(data);
@@ -240,6 +241,7 @@ class TypeRegistry {
                 });
             };
         } else {
+            if(types.type) types = types.type;
             const converter = this.types[types] || NO_CONVERSION;
             return function(data) {
                 return converter.convert(data);
