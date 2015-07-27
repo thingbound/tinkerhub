@@ -35,9 +35,6 @@ class RemoteDevice {
         this._debug('Emitting event', event, 'with payload', payload);
 
         this._emitter.emit(event, payload);
-        this._listeners.forEach(function(listener) {
-            listener(event, payload);
-        });
     }
 
     /**
