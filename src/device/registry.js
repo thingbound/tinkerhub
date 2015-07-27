@@ -8,21 +8,7 @@ var LocalDevice = require('./local');
 var publicDevice = require('./public');
 
 var collection = require('./collection');
-var weak = require('weak');
-
-/**
- * Create a function that will remove a collection from the registry when the
- * public API is no longer in use.
- */
-function makeCollectionRemover(registry, c) {
-    return function() {
-        const idx = registry._collections.indexOf(c);
-        if(idx >= 0) {
-            debug('Removing unused collection c' + c.metadata.id);
-            registry._collections.splice(idx, 1);
-        }
-    };
-}
+var WeakRefMap = require('./weakrefmap');
 
 /**
  * The internal registry of devices.
@@ -35,7 +21,8 @@ class InternalRegistry {
 
         this._localDevices = {};
         this._devices = {};
-        this._collections = [];
+        this._collections = new WeakRefMap();
+        this._publicDevices = new WeakRefMap();
 
         net.on('message', this._onmessage.bind(this));
         net.on('peerConnected', this._sendDeviceListTo.bind(this));
@@ -49,12 +36,15 @@ class InternalRegistry {
      * Private: Get the public API for the given device.
      */
     _toPublicDevice(device) {
-        if(device._public) {
-            return device._public;
-        }
+        const id = typeof device === 'string' ? device : device.metadata.id;
+        let pd = this._publicDevices.get(id);
+        if(pd) return pd;
 
-        device._public = publicDevice(device);
-        return device._public;
+        pd = publicDevice(id);
+        this._publicDevices.put(id, pd);
+        debug('New public device ' + id);
+
+        return pd;
     }
 
     /**
@@ -117,7 +107,10 @@ class InternalRegistry {
 
         if(! registered) {
             const publicDevice = this._toPublicDevice(device);
-            this._collections.forEach(function(c) {
+            publicDevice._._device = device;
+            this._publicDevices.increaseRef(def.id);
+
+            this._collections.forEach(function(key, c) {
                 c._addDevice(publicDevice);
             });
 
@@ -133,23 +126,36 @@ class InternalRegistry {
 
         device._remove = function() {
             delete this._localDevices[id];
+            delete this._devices[id];
 
             this._net.broadcast('device:unavailable', device.metadata.def);
 
             var publicDevice = this._toPublicDevice(device);
+
+            // Remove from collections
+            this._collections.forEach((key, c) => c._removeDevice(publicDevice));
+
+            // Emit an event that the device is no longer available
             this._events.emit('deviceUnavailable', publicDevice);
 
-            this._collections.forEach(function(c) {
-                c._removeDevice(publicDevice);
-            });
+            // Device has been removed, so stop keeping a hard reference to it
+            this._publicDevices.decreaseRef(id);
+
+            delete publicDevice._._device;
         }.bind(this);
 
         debug('New local device ' + id);
 
+        // Create or connect with the public API for this device
+        const publicDevice = this._toPublicDevice(device);
+        publicDevice._._device = device;
+
+        // Local devices need to be hard referenced
+        this._publicDevices.increaseRef(id);
+
         this._net.broadcast('device:available', device.metadata.def);
 
-        const publicDevice = this._toPublicDevice(device);
-        this._collections.forEach(function(c) {
+        this._collections.forEach(function(key, c) {
             c._addDevice(publicDevice);
         });
 
@@ -169,12 +175,18 @@ class InternalRegistry {
 
         delete this._devices[device.id];
 
-        const publicDevice = this._toPublicDevice(device);
+        const publicDevice = this._toPublicDevice(device.id);
+
+        this._collections.forEach((key, c) => c._removeDevice(publicDevice));
+
+        // Device has been removed, so stop keeping a hard reference to it
+        this._publicDevices.decreaseRef(device.id);
+
         this._events.emit('deviceUnavailable', publicDevice);
 
-        this._collections.forEach(c => c._removeDevice(publicDevice));
-
         registered._remove();
+
+        delete publicDevice._._device;
     }
 
     /**
@@ -278,10 +290,11 @@ class InternalRegistry {
      * Fetch a device using its identifier.
      */
     get(id) {
-        const device = this._devices[id];
-        if(! device) return null;
+        return this._toPublicDevice(id);
+    }
 
-        return this._toPublicDevice(device);
+    isAvailable(id) {
+        return !!this._devices[id];
     }
 
     /**
@@ -291,14 +304,12 @@ class InternalRegistry {
     collection(filter) {
         const publicCollection = collection(filter);
         const c = publicCollection._;
-        this._collections.push(c);
+        this._collections[c.metadata.id] = c;
 
         const self = this;
         Object.keys(this._devices).forEach(key =>
             c._addDevice(self._toPublicDevice(self._devices[key]))
         );
-
-        weak(publicCollection, makeCollectionRemover(this, c));
 
         return publicCollection;
     }

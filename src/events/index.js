@@ -12,6 +12,13 @@ class EventEmitter {
         this._context = defaultCtx || this;
     }
 
+    _triggerListenerChange() {
+        if(! this._listenerChangeListener) return;
+
+        const hasListeners = Object.keys(this._listeners).length || this._anyListeners.length;
+        this._listenerChangeListener(hasListeners);
+    }
+
     /**
      * Listen for a specific event.
      *
@@ -21,6 +28,8 @@ class EventEmitter {
     on(eventName, listener) {
         var listeners = this._listeners[eventName] || (this._listeners[eventName] = []);
         listeners.push(listener);
+
+        this._triggerListenerChange();
     }
 
     /**
@@ -37,6 +46,8 @@ class EventEmitter {
         if(idx < 0) return;
 
         listeners.splice(idx, 1);
+
+        this._triggerListenerChange();
     }
 
     /**
@@ -47,6 +58,8 @@ class EventEmitter {
      */
     onAny(listener) {
         this._anyListeners.push(listener);
+
+        this._triggerListenerChange();
     }
 
     /**
@@ -60,6 +73,8 @@ class EventEmitter {
         if(idx < 0) return;
 
         this._anyListeners.splice(idx, 1);
+
+        this._triggerListenerChange();
     }
 
     /**
