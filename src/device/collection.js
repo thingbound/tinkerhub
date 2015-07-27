@@ -73,7 +73,7 @@ class Collection {
         this._devices.push(device);
 
         const listener = (event, payload) => this._events.emitWithContext(device, event, payload);
-        device.onAll(listener);
+        device.onAny(listener);
         this._listeners[device.metadata.id] = listener;
 
         this._events.emit('deviceAvailable', device);

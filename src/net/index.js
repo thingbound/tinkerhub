@@ -153,6 +153,7 @@ class Peer {
         clearInterval(this._ping);
         this._ping = setInterval(this.ping.bind(this), 1500);
 
+        this.pinged();
         this.ping();
 
         // Emit a join event if this is the first time we see this peer
@@ -168,6 +169,7 @@ class Peer {
         });
         client.on('connect', () => {
             this.parent._setupSocket(client);
+            this.pinged();
             this.ping();
         });
 

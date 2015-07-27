@@ -6,6 +6,7 @@ class Metadata {
         this._owner = owner;
 
         this.id = def.id;
+        this.available = true;
 
         this.updateDef(def);
     }

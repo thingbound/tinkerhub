@@ -71,7 +71,7 @@ class WeakRefMap {
     put(key, data) {
         this._entries[key] = weak(data, createRemover(this, key));
         if(data._events) {
-            data._events = createHardRefUpdater(this, key);
+            data._events._listenerChangeListener = createHardRefUpdater(this, key);
         }
     }
 

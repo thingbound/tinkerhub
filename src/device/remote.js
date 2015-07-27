@@ -12,7 +12,6 @@ class RemoteDevice {
 
         this._debug = require('debug')('th.device.' +  def.id);
         this._emitter = new EventEmitter(this);
-        this._listeners = [];
 
         this._promises = {};
 
@@ -41,12 +40,18 @@ class RemoteDevice {
         });
     }
 
-    on(event, listener) {
-        this._emitter.on(event, listener);
+    /**
+     * Listen for all events triggered on this device.
+     */
+    onAny(listener) {
+        this._emitter.onAny(listener);
     }
 
-    onAll(listener) {
-        this._emitter.onAny(listener);
+    /**
+     * Stop listening for events triggered on this device.
+     */
+    offAny(listener) {
+        this._emitter.offAny(listener);
     }
 
     call(action, args) {

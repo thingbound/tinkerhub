@@ -141,7 +141,7 @@ class InternalRegistry {
             // Device has been removed, so stop keeping a hard reference to it
             this._publicDevices.decreaseRef(id);
 
-            delete publicDevice._._device;
+            publicDevice._._device = null;
         }.bind(this);
 
         debug('New local device ' + id);
@@ -186,7 +186,7 @@ class InternalRegistry {
 
         registered._remove();
 
-        delete publicDevice._._device;
+        publicDevice._._device = null;
     }
 
     /**
@@ -214,7 +214,7 @@ class InternalRegistry {
         Object.keys(this._devices).forEach(function(id) {
             const device = this._devices[id];
             if(device.metadata.def.peer === peer) {
-                this._removeDevice(device);
+                this._removeDevice(device.metadata.def);
             }
         }.bind(this));
     }
@@ -304,7 +304,7 @@ class InternalRegistry {
     collection(filter) {
         const publicCollection = collection(filter);
         const c = publicCollection._;
-        this._collections[c.metadata.id] = c;
+        this._collections.put(c._metadata.id, c);
 
         const self = this;
         Object.keys(this._devices).forEach(key =>

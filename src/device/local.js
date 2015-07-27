@@ -14,7 +14,6 @@ class LocalDevice {
         this._emitter = new EventEmitter(this);
 
         this._net = parent._net;
-        this._listeners = [];
         this.instance = instance;
 
         // Create the definition of this device
@@ -48,26 +47,20 @@ class LocalDevice {
         });
 
         this._emitter.emit(event, payload);
-        this._listeners.forEach(function(listener) {
-            listener(event, payload);
-        });
-    }
-
-    /**
-     * Listen for a specific event on this device.
-     *
-     * @param event The event to listen for
-     * @param listener The listener that will be invoked
-     */
-    on(event, listener) {
-        this._emitter.on(event, listener);
     }
 
     /**
      * Listen for all events triggered on this device.
      */
-    onAll(listener) {
+    onAny(listener) {
         this._emitter.onAny(listener);
+    }
+
+    /**
+     * Stop listening for events triggered on this device.
+     */
+    offAny(listener) {
+        this._emitter.offAny(listener);
     }
 
     /**

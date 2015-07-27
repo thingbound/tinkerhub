@@ -6,13 +6,25 @@ const unavailableMetadata = {
     available: false
 };
 
-const unavailableCall = function() {
-    return Q.reject('Device unavailable');
-};
-
 class PublicDevice {
     constructor() {
         this._events = new EventEmitter(this);
+        this._listener = (event, payload) => this._events.emit(event, payload);
+    }
+
+    get _device() {
+        return this.__device;
+    }
+
+    set _device(device) {
+        if(this.__device) {
+            this.__device.offAny(this._listener);
+        }
+
+        this.__device = device;
+        if(device) {
+            device.onAny(this._listener);
+        }
     }
 
     get metadata() {
