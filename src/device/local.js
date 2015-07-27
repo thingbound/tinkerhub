@@ -21,6 +21,14 @@ class LocalDevice {
         def.tags = storage.get('internal.device.' + id + '.tags') || [];
         def.peer = def.owner = this._net.id;
 
+        // Fetch the name if this device is marked as nameable
+        if(def.capabilities.indexOf('nameable') >= 0) {
+            const storedName = storage.get('internal.device.' + id + '.name');
+            if(storedName) {
+                def.name = storedName;
+            }
+        }
+
         this.metadata = metadata(this, def);
 
         // Create our type converters
@@ -114,6 +122,11 @@ class LocalDevice {
      */
     _setName(name) {
         this.metadata.def.name = name;
+
+        if(this.metadata.tags.indexOf('cap:nameable') >= 0) {
+            storage.put('internal.device.' + this.metadata.id + '.name', name);
+        }
+
         this._broadcastMetadataChange();
     }
 
