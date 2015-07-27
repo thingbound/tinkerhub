@@ -65,7 +65,6 @@ module.exports = function(id) {
 
     return NProxy.create({
         get: function(proxy, name) {
-            const device = publicDevice._device;
             if(name === '_') {
                 return publicDevice;
             } else if(name[0] === '_') {
