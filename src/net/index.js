@@ -38,9 +38,9 @@ class Network {
 
             this.server = net.createServer(this._setupSocket.bind(this));
 
-            this.server.listen(port);
-
-        	this._stoppables.push(discovery.expose(port, this.id));
+            this.server.listen(port, () => {
+        	       this._stoppables.push(discovery.expose(port, this.id));
+            });
         });
 
         // Start discovering which peers we have
