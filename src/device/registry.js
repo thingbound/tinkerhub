@@ -304,7 +304,7 @@ class InternalRegistry {
     collection(filter) {
         const publicCollection = collection(filter);
         const c = publicCollection._;
-        this._collections.put(c._metadata.id, c);
+        this._collections.put(c.metadata.id, c);
 
         const self = this;
         Object.keys(this._devices).forEach(key =>

@@ -13,7 +13,7 @@ class Collection {
         this._selector = selector;
         this._events = new EventEmitter(this);
         this._devices = [];
-        this._metadata = metadata(this, {
+        this.metadata = metadata(this, {
             id: 'collection:' + id,
             tags: [ 'type:collection' ]
         });
