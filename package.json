@@ -1,6 +1,6 @@
 {
   "name": "tinkerhub",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "Connect your devices together and tinker with them",
   "repository": "tinkerhub/tinkerhub",
