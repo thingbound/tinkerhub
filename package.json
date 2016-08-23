@@ -4,7 +4,7 @@
   "license": "MIT",
   "description": "Connect your devices together and tinker with them",
   "repository": "aholstenson/tinkerhub",
-  "main": "dist/tinkerhub.js",
+  "main": "lib/tinkerhub.js",
   "scripts": {
     "prepublish": "gulp build"
   },
@@ -15,12 +15,12 @@
     "debug": "^2.2.0",
     "empty-port": "0.0.1",
     "mkdirp": "^0.5.1",
-    "node-lmdb": "^0.3.0",
-    "node-proxy": "~0.9.0",
+    "node-lmdb": "^0.4.1",
+    "node-proxy": "^1.0.0",
     "polo": "^0.8.1",
     "q": "^1.4.1",
     "source-map-support": "^0.3.2",
-    "weak": "^0.4.1"
+    "weak": "^1.0.1"
   },
   "devDependencies": {
     "gulp": "^3.9.0",
