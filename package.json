@@ -24,6 +24,6 @@
   },
   "devDependencies": {
     "gulp": "^3.9.0",
-    "tinkerhub-build": "0.0.1"
+    "tinkerhub-build": "0.1.1"
   }
 }
