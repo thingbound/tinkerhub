@@ -12,7 +12,7 @@ automatically on `require('tinkerhub')`.
 
 ```javascript
 // Asynchronously connect to instances on the local network
-var th = require('tinkerhub');
+const th = require('tinkerhub');
 ```
 
 ## Discovering devices
@@ -30,7 +30,7 @@ If you know the identifier of a given device you can fetch it via the `get`
 function.
 
 ```javascript
-var device = th.devices.get('deviceIdHere');
+const device = th.devices.get('deviceIdHere');
 console.log('Got ', device);
 ```
 
@@ -39,13 +39,13 @@ Collections can be created from tags or from a custom filter function.
 
 ```javascript
 // Get all devices
-var allDevices = th.devices.all();
+const allDevices = th.devices.all();
 
 // Fetch devices via one or more tags
-var lights = th.devices.tagged('type:light');
+const lights = th.devices.tagged('type:light');
 
 // Filter via a function when a new device is available
-var devicesWithStatusAction = th.devices.collection(function(device) {
+const devicesWithStatusAction = th.devices.collection(function(device) {
     return device.metadata.actions[status];
 });
 ```
@@ -81,7 +81,7 @@ Devices  support events, which can easily be listened for via `on`.
 
 ```javascript
 // Start listening
-var handle = device.on('turnedOn', function() {
+const handle = device.on('turnedOn', function() {
     // Device has been turned on
 });
 
