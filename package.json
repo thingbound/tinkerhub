@@ -19,7 +19,6 @@
     "node-proxy": "^1.0.0",
     "polo": "^0.8.1",
     "q": "^1.4.1",
-    "source-map-support": "^0.3.2",
     "weak": "^1.0.1"
   },
   "devDependencies": {
