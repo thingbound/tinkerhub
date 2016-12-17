@@ -26,11 +26,11 @@ th.devices.on('deviceAvailable', function(device) {
 })
 ```
 
-If you know the identifier of a given device you can fetch it via the `get`
+If you know the identifier of a given device you can fetch it via the `getSpecific`
 function.
 
 ```javascript
-const device = th.devices.get('deviceIdHere');
+const device = th.devices.getSpecific('deviceIdHere');
 console.log('Got ', device);
 ```
 
@@ -42,10 +42,10 @@ Collections can be created from tags or from a custom filter function.
 const allDevices = th.devices.all();
 
 // Fetch devices via one or more tags
-const lights = th.devices.tagged('type:light');
+const lights = th.devices.get('type:light');
 
 // Filter via a function when a new device is available
-const devicesWithStatusAction = th.devices.collection(function(device) {
+const devicesWithStatusAction = th.devices.get(function(device) {
     return device.metadata.actions[status];
 });
 ```
@@ -117,14 +117,12 @@ can be used to act on the result of the invocation.
 device.status()
     .then(function(status) {
         console.log('status is', status);
-    })
-    .done();
+    });
 
 th.devices.tagged('type:light').status()
     .then(function(statuses) {
         console.log(statuses); // Object with deviceId = result
-    })
-    .done();
+    });
 ```
 
 ## Creating a device
