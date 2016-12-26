@@ -18,10 +18,10 @@ const th = require('tinkerhub');
 ## Discovering devices
 
 Devices can join or leave the network at any time. It's possible to listen
-to `deviceAvailable` and `deviceUnavailable` to be notified when this happens.
+to `device:available` and `device:unavailable` to be notified when this happens.
 
 ```javascript
-th.devices.on('deviceAvailable', function(device) {
+th.devices.on('device:available', function(device) {
     console.log('New device', device);
 })
 ```
@@ -114,22 +114,22 @@ Actions return promises (via [Q](http://documentup.com/kriskowal/q/)) that
 can be used to act on the result of the invocation.
 
 ```javascript
-device.status()
-    .then(function(status) {
-        console.log('status is', status);
+device.state()
+    .then(function(state) {
+        console.log('state is', state);
     });
 
-th.devices.tagged('type:light').status()
-    .then(function(statuses) {
-        console.log(statuses); // Object with deviceId = result
+th.devices.get('type:light').state()
+    .then(function(result) {
+        console.log(result);
+        console.log(result.firstValue);
+        console.log(result['deviceIdHere']);
     });
 ```
 
 ## Creating a device
 
-Devices are created by binding an object to a unique device id. It is recommended
-that device ids are prefixed with their module name, `module:id` such as
-`hue:00FFCC33DD` or `chromecast:TV`.
+Devices are created by binding an object to a unique device id. Device ids must be prefixed with a namespace, such as `module:id`, for example `hue:00FFCC33DD` or `chromecast:TV`.
 
 When a device is registered it is made available over the network, so devices
 should only be registered when they are actually available.
@@ -146,11 +146,11 @@ th.devices.register('test:uniqueId', {
         console.log('Someone told me to say:', message);
     },
 
-    status: function() {
-        return _privateStatusHelper();
+    state: function() {
+        return _privateStateHelper();
     },
 
-    _privateStatusHelper: function() {
+    _privateStateHelper: function() {
         return { ... };
     }
 })
@@ -233,10 +233,10 @@ certain room. This allows for things such as this:
 
 ```javascript
 // Fetch lights in the livingroom and turn the om
-th.devices.tagged('type:light', 'livingroom').turnOn();
+th.devices.get('type:light', 'livingroom').turnOn();
 
 // Log all devices found in livingroom
-console.log(th.devices.tagged('livingroom'));
+console.log(th.devices.get('livingroom'));
 ```
 
 ### Modify tags via the API
