@@ -50,7 +50,7 @@ const devicesWithStatusAction = th.devices.get(function(device) {
 });
 ```
 
-Collections also support the `deviceAvailable` and `deviceUnavailable` events.
+Collections also support the `device:available` and `device:unavailable` events.
 
 ## Working with devices and collections
 
@@ -222,6 +222,33 @@ th.types.registerDeviceType('light')
 Any `light`-devices registered that define that they have the capability
 `dimmable` will then be checked so that the dimmable actions are defined.
 
+Tinkerhub comes with a few default types that can be found in
+[lib/device/types](https://github.com/tinkerhub/tinkerhub/tree/master/lib/device/types/devices)
+and [lib/device/capabilities.js](https://github.com/tinkerhub/tinkerhub/blob/master/lib/device/types/capabilities.js).
+
+### Values
+
+When registering types and capabilities the value of arguments and return types
+can be specified.
+
+```javascript
+th.values.color('#fba');
+
+th.values.length('2 m');
+th.values.length(2); // Defaults to meters
+
+// Many types support conversions between units:
+th.values.duration(2000).seconds;
+```
+
+The basic value types are: `string`, `number`, `percentage`, `array`, `object`
+and `buffer`.
+
+There are a few built-in value types that can be used which help with things
+such as unit conversion. These are currently: `angle`, `color`, `duration`,
+`energy`, `illuminance`, `length`, `mass`, `power`, `pressure`, `speed`,
+`temperature` and `volume`.
+
 ## Tags
 
 Devices support user defined tags via their metadata. These tags are persisted
@@ -233,10 +260,10 @@ certain room. This allows for things such as this:
 
 ```javascript
 // Fetch lights in the livingroom and turn the om
-th.devices.get('type:light', 'livingroom').turnOn();
+th.devices.get('type:light', 'room:livingroom').turnOn();
 
 // Log all devices found in livingroom
-console.log(th.devices.get('livingroom'));
+console.log(th.devices.get('room:livingroom'));
 ```
 
 ### Modify tags via the API
@@ -250,4 +277,26 @@ console.log(device.metadata.tags); // Get all of the tags
 device.metadata.tag('tag1', ..., 'tagN'); // Add tags to the device
 
 device.metadata.removeTag('tag1', ..., 'tagN'); // Remove tags from the device
+```
+
+## Extending devices
+
+It's possible to automatically extend devices as they become available, which
+is useful for generic devices such as those registered via bridges.
+
+```javascript
+th.devices.extend([ 'type:bluetooth-low-energy' ], function(encounter) {
+    encounter.device.bleInspect()
+        .then(def => {
+            if(def.services[SOME_SERVICE]) {
+                const newDevice = encounter.enhance({
+                    metadata: {
+                        type: 'more-specific-type'
+                    },
+
+                    ... actions
+                });
+            }
+        });
+});
 ```
