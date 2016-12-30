@@ -4,6 +4,29 @@ Tinkerhub is a home automation library that connects your devices and lets you
 tinker with them. This repository contains the main library for discovering,
 registering and interacting with devices.
 
+To interact with your devices have a look at [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli).
+
+## Installing
+
+Tinkerhub requires at least Node 6.0.0.
+
+If you are setting up your local network simply install `tinkerhub` and any
+devices you need:
+
+```
+npm install --save tinkerhub
+npm install --save tinkerhub-device-you-want-here
+```
+
+If you are building a device it is recommended that you have `tinkerhub` as
+a peer dependency in `package.json`:
+
+```
+"peerDependencies": {
+  "tinkerhub": "^1.0.0"
+},
+```
+
 ## Joining the Tinkerhub network
 
 Tinkerhub will automatically connect to other instances on the same local
@@ -14,6 +37,12 @@ automatically on `require('tinkerhub')`.
 // Asynchronously connect to instances on the local network
 const th = require('tinkerhub');
 ```
+
+## Automatically loading modules
+
+Call `th.autoload()` to load any modules with a name starting with `tinkerhub`.
+This is provided as an easy way of loading any locally installed modules and
+should not be used when building devices.
 
 ## Discovering devices
 
@@ -81,8 +110,8 @@ Devices  support events, which can easily be listened for via `on`.
 
 ```javascript
 // Start listening
-const handle = device.on('turnedOn', function() {
-    // Device has been turned on
+const handle = device.on('power', function(power) {
+    // Device has either been turned on or off
 });
 
 // To stop listening
@@ -93,9 +122,10 @@ The same is true for collections, where an event will be trigged if any
 device in the collection emits an event:
 
 ```javascript
-th.devices.tagged('type:light').on('turnedOn', function() {
+th.devices.get('type:light').on('power', function(power) {
     // this refers to the device
-    device.turnOff();
+    th.time.in('30s')
+        .then(this.turnOff);
 });
 ```
 
