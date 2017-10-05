@@ -6,8 +6,7 @@
   "repository": "tinkerhub/tinkerhub",
   "main": "lib/tinkerhub.js",
   "scripts": {
-    "prepublish": "node_modules/.bin/eslint lib",
-    "test": "node_modules/.bin/eslint lib"
+    "test": "node_modules/.bin/eslint ."
   },
   "keywords": [
     "tinkerhub",
@@ -29,7 +28,7 @@
     "weak": "^1.0.1"
   },
   "devDependencies": {
-    "eslint": "^3.11.1",
-    "eslint-plugin-node": "^3.0.5"
+    "eslint": "^4.6.1",
+    "eslint-plugin-node": "^5.1.1"
   }
 }
