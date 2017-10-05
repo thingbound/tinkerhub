@@ -23,9 +23,13 @@ function traversePrototype(root, name, func) {
 	}
 }
 
+const eventQueue = Symbol('eventQueue');
+
 const Device = module.exports = toExtendable(class Device {
 	constructor() {
 		this.metadata = new Metadata();
+
+		this[eventQueue] = [];
 
 		traversePrototype(this, 'availableAPI', items => this.metadata.expose(...items));
 		traversePrototype(this, 'types', types => this.metadata.type(...types));
@@ -61,7 +65,29 @@ const Device = module.exports = toExtendable(class Device {
 		const handle = this[HANDLE];
 		if(! handle) return;
 
-		handle.emit(event, data);
+		const queue = this[eventQueue];
+		const shouldQueueEmit = queue.length === 0;
+
+		// Check if there is already an even scheduled
+		const idx = queue.findIndex(e => e[0] === event);
+		if(idx >= 0) {
+			// Remove the event - only a single event can is emitted per tick
+			queue.splice(idx, 1);
+		}
+
+		// Add the event to the queue
+		queue.push([ event, data ]);
+
+		if(shouldQueueEmit) {
+			// Schedule emittal of the events
+			setImmediate(() => {
+				for(const e of queue) {
+					handle.emit(e[0], e[1]);
+				}
+
+				this[eventQueue] = [];
+			});
+		}
 	}
 
 	debug() {
