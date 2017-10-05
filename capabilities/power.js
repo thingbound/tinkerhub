@@ -2,6 +2,7 @@
 
 const Device = require('../device');
 const State = require('./state');
+const { boolean } = require('../lib/values');
 
 /**
  * Power capability, for devices that support switching and monitoring the power
@@ -39,8 +40,7 @@ module.exports = Device.capability(Device => class DeviceWithPower extends Devic
     power(power=undefined) {
         if(typeof power !== 'undefined') {
             // Call changePower and then return the new power state
-            return Promise.resolve(this.changePower(power))
-                .then(() => this.getState('power'));
+            return this.setPower(power);
 		}
 
 		return this.getState('power');
@@ -61,7 +61,8 @@ module.exports = Device.capability(Device => class DeviceWithPower extends Devic
 	}
 
 	setPower(power) {
-		if(typeof power !== 'boolean') throw new Error('Power as a boolean is required');
+		if(typeof power === 'undefined') throw new Error('Power must be specified');
+		power = boolean(power);
 
 		return Promise.resolve(this.changePower(power))
 			.then(() => this.getState('power'));
