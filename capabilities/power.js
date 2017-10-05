@@ -75,11 +75,9 @@ module.exports = Device.capability(Device => class DeviceWithPower extends Devic
 	 * @param {boolean} power
 	 */
     updatePower(power) {
-        const currentPower = this.getState('power', false);
-        this.updateState('power', power);
-        if(currentPower != power) {
-            this.emitEvent('power', power);
-        }
+        if(this.updateState('power', power)) {
+			this.emitEvent('power', power);
+		}
     }
 
 	/**

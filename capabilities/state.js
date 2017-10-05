@@ -37,9 +37,15 @@ module.exports = Device.capability(Device => class DeviceWithState extends Devic
 	 * @param {*} value
 	 */
 	updateState(key, value) {
-		if(! deepEqual(this.state[key], value)) {
+		if(deepEqual(this.state[key], value)) {
+			// If the value has not changed, skip updating and emitting event
+			return false;
+		} else {
+			// Value has changed, update and queue event emittal
 			this.state[key] = value;
 			this.emitEvent('state', this.state);
+
+			return true;
 		}
 	}
 
