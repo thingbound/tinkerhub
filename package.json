@@ -13,7 +13,9 @@
     "iot",
     "home automation"
   ],
-  "engines" : { "node" : ">=6.0.0" },
+  "engines": {
+    "node": ">=6.0.0"
+  },
   "dependencies": {
     "amp": "^0.3.1",
     "appdirectory": "^0.1.0",
@@ -22,8 +24,12 @@
     "color-string": "^1.4.0",
     "color-temperature": "^0.2.7",
     "debug": "^2.2.0",
+    "deep-equal": "^1.0.1",
+    "foibles": "^0.1.0",
+    "is-mergeable-object": "^1.1.0",
+    "lodash.merge": "^4.6.0",
     "mkdirp": "^0.5.1",
-    "node-lmdb": "^0.4.1",
+    "node-lmdb": "^0.4.13",
     "q": "^1.4.1",
     "weak": "^1.0.1"
   },
