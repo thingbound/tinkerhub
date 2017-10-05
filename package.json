@@ -25,7 +25,7 @@
     "color-temperature": "^0.2.7",
     "debug": "^2.2.0",
     "deep-equal": "^1.0.1",
-    "foibles": "^0.1.0",
+    "foibles": "^0.2.0",
     "is-mergeable-object": "^1.1.0",
     "lodash.merge": "^4.6.0",
     "mkdirp": "^0.5.1",
