@@ -79,6 +79,7 @@ exports.Dimmable = Device.capability(BaseDevice => class DimmableLight extends B
 	 */
 	updateBrightness(brightness) {
 		this.updateState('brightness', brightness);
+		this.emitEvent('brightness', brightness);
 	}
 
 	/**
@@ -116,7 +117,7 @@ exports.Color = Device.capability(BaseDevice => class ColoredLight extends BaseD
 	 */
 	color(color, duration=Light.DURATION) {
 		if(color) {
-			return this.changeColor(color, duration);
+			return this.setColor(color, duration);
 		}
 
 		return this.getState('color');
@@ -131,6 +132,7 @@ exports.Color = Device.capability(BaseDevice => class ColoredLight extends BaseD
 
 	updateColor(color) {
 		this.updateState('color', color);
+		this.emitEvent('color', color);
 	}
 
 	changeColor(color, duration) {
