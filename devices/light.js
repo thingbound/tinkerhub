@@ -2,7 +2,7 @@
 const Device = require('../device');
 const State = require('../capabilities/state');
 const Power = require('../capabilities/power');
-const { duration } = require('../lib/values');
+const { duration, percentage, color } = require('../lib/values');
 
 const Light = exports.Light = Device.type(BaseDevice => class Light extends BaseDevice.with(Power) {
 	/**
@@ -64,10 +64,12 @@ exports.Dimmable = Device.capability(BaseDevice => class DimmableLight extends B
 		return this.setBrightness(Math.max(0, this.state.brightness - amount), duration);
 	}
 
-	setBrightness(brightness, duration=Light.DURATION) {
-		if(typeof brightness !== 'number') throw new Error('Brightness as a number is required');
+	setBrightness(brightness, duration0=Light.DURATION) {
+		if(typeof brightness === 'undefined') throw new Error('Brightness must be specified');
+		brightness = percentage(brightness);
+		duration0 = duration(duration0);
 
-		return Promise.resolve(this.changeBrightness(brightness, duration))
+		return Promise.resolve(this.changeBrightness(brightness, duration0))
 			.then(() => this.getState('brightness', 0));
 	}
 
@@ -124,10 +126,12 @@ exports.Color = Device.capability(BaseDevice => class ColoredLight extends BaseD
 		return this.getState('color');
 	}
 
-	setColor(color, duration=Light.DURATION) {
-		if(! color) throw new Error('Color is required');
+	setColor(color0, duration0=Light.DURATION) {
+		if(typeof color0 === 'undefined') throw new Error('Color must be specified');
+		color0 = color(color0);
+		duration0 = duration(duration0);
 
-		return Promise.resolve(this.changeColor(color, duration))
+		return Promise.resolve(this.changeColor(color0, duration0))
 			.then(() => this.getState('color'));
 	}
 
