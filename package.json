@@ -17,6 +17,7 @@
     "node": ">=6.0.0"
   },
   "dependencies": {
+    "amounts": "^0.4.0",
     "amp": "^0.3.1",
     "appdirectory": "^0.1.0",
     "bonjour": "^3.5.0",
