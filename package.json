@@ -25,12 +25,10 @@
     "end-of-stream": "^1.4.0",
     "eventemitter2": "^4.1.2",
     "is-mergeable-object": "^1.1.0",
-    "lodash.merge": "^4.6.0",
     "mkdirp": "^0.5.1",
     "node-lmdb": "^0.4.13",
     "tinkerhub-mdns": "^0.1.0",
-    "unix-socket-leader": "^0.1.2",
-    "weak": "^1.0.1"
+    "unix-socket-leader": "^0.1.2"
   },
   "devDependencies": {
     "eslint": "^4.6.1",
