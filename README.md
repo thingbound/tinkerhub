@@ -51,7 +51,7 @@ to `device:available` and `device:unavailable` to be notified when this happens.
 
 ```javascript
 th.devices.on('device:available', function(device) {
-    console.log('New device', device);
+	console.log('New device', device);
 })
 ```
 
@@ -75,7 +75,7 @@ const lights = th.devices.get('type:light');
 
 // Filter via a function when a new device is available
 const devicesWithStatusAction = th.devices.get(function(device) {
-    return device.metadata.actions[status];
+	return device.metadata.actions[status];
 });
 ```
 
@@ -111,7 +111,7 @@ Devices  support events, which can easily be listened for via `on`.
 ```javascript
 // Start listening
 const handle = device.on('power', function(power) {
-    // Device has either been turned on or off
+	// Device has either been turned on or off
 });
 
 // To stop listening
@@ -123,9 +123,9 @@ device in the collection emits an event:
 
 ```javascript
 th.devices.get('type:light').on('power', function(power) {
-    // this refers to the device
-    th.time.in('30s')
-        .then(this.turnOff);
+	// this refers to the device
+	th.time.in('30s')
+		.then(this.turnOff);
 });
 ```
 
@@ -145,16 +145,16 @@ can be used to act on the result of the invocation.
 
 ```javascript
 device.state()
-    .then(function(state) {
-        console.log('state is', state);
-    });
+	.then(function(state) {
+		console.log('state is', state);
+	});
 
 th.devices.get('type:light').state()
-    .then(function(result) {
-        console.log(result);
-        console.log(result.firstValue);
-        console.log(result['deviceIdHere']);
-    });
+	.then(function(result) {
+		console.log(result);
+		console.log(result.firstValue);
+		console.log(result['deviceIdHere']);
+	});
 ```
 
 ## Creating a device
@@ -166,23 +166,23 @@ should only be registered when they are actually available.
 
 ```javascript
 th.devices.register('test:uniqueId', {
-    metadata: {
-        name: 'Test Device',
-        type: 'deviceType',
-        capabilities: [ 'status' ]
-    },
+	metadata: {
+		name: 'Test Device',
+		type: 'deviceType',
+		capabilities: [ 'status' ]
+	},
 
-    say: function(message) {
-        console.log('Someone told me to say:', message);
-    },
+	say: function(message) {
+		console.log('Someone told me to say:', message);
+	},
 
-    state: function() {
-        return _privateStateHelper();
-    },
+	state: function() {
+		return _privateStateHelper();
+	},
 
-    _privateStateHelper: function() {
-        return { ... };
-    }
+	_privateStateHelper: function() {
+		return { ... };
+	}
 })
 ```
 
@@ -217,11 +217,11 @@ of a type `cookie-jar`:
 
 ```javascript
 th.types.registerDeviceType('cookie-jar')
-    .action('open').done()
-    .action('close').done()
-    .action('setOpen').argument('boolean', 'If the jar should be open').done()
-    .action('isOpen').returns('boolean', 'If the jar is open or not').done()
-    .done();
+	.action('open').done()
+	.action('close').done()
+	.action('setOpen').argument('boolean', 'If the jar should be open').done()
+	.action('isOpen').returns('boolean', 'If the jar is open or not').done()
+	.done();
 ```
 
 It is possible to specify that certain actions are only available when the
@@ -231,22 +231,22 @@ may be dimmable:
 
 ```javascript
 th.types.registerDeviceType('light')
-    .requireCapability('state', 'power')
-    .when('dimmable')
-        .action('setBrightness')
-            .argument('percentage', 'Brightness Percentage')
-            .returns('object', 'The new state')
-            .done()
-        .action('increaseBrightness')
-            .argument('percentage', 'Percentage to increase')
-            .returns('object', 'The new state')
-            .done()
-        .action('decreaseBrightness')
-            .argument('percentage', 'Percentage to decrease')
-            .returns('object', 'The new state')
-            .done()
-        .done()
-    .done();
+	.requireCapability('state', 'power')
+	.when('dimmable')
+		.action('setBrightness')
+			.argument('percentage', 'Brightness Percentage')
+			.returns('object', 'The new state')
+			.done()
+		.action('increaseBrightness')
+			.argument('percentage', 'Percentage to increase')
+			.returns('object', 'The new state')
+			.done()
+		.action('decreaseBrightness')
+			.argument('percentage', 'Percentage to decrease')
+			.returns('object', 'The new state')
+			.done()
+		.done()
+	.done();
 ```
 
 Any `light`-devices registered that define that they have the capability
@@ -316,17 +316,17 @@ is useful for generic devices such as those registered via bridges.
 
 ```javascript
 th.devices.extend([ 'type:bluetooth-low-energy' ], function(encounter) {
-    encounter.device.bleInspect()
-        .then(def => {
-            if(def.services[SOME_SERVICE]) {
-                const newDevice = encounter.enhance({
-                    metadata: {
-                        type: 'more-specific-type'
-                    },
+	encounter.device.bleInspect()
+		.then(def => {
+			if(def.services[SOME_SERVICE]) {
+				const newDevice = encounter.enhance({
+					metadata: {
+						type: 'more-specific-type'
+					},
 
-                    ... actions
-                });
-            }
-        });
+					... actions
+				});
+			}
+		});
 });
 ```
