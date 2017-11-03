@@ -28,7 +28,6 @@
     "lodash.merge": "^4.6.0",
     "mkdirp": "^0.5.1",
     "node-lmdb": "^0.4.13",
-    "q": "^1.4.1",
     "tinkerhub-mdns": "^0.1.0",
     "unix-socket-leader": "^0.1.2",
     "weak": "^1.0.1"
