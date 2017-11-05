@@ -20,6 +20,7 @@
     "amounts": "^0.4.0",
     "amp": "^0.3.1",
     "appdirectory": "^0.1.0",
+    "appliances": "^0.1.0",
     "debug": "^3.1.0",
     "deep-equal": "^1.0.1",
     "end-of-stream": "^1.4.0",
@@ -27,6 +28,8 @@
     "is-mergeable-object": "^1.1.0",
     "mkdirp": "^0.5.1",
     "node-lmdb": "^0.4.13",
+    "p-any": "^1.1.0",
+    "p-settle": "^2.0.0",
     "tinkerhub-mdns": "^0.1.0",
     "unix-socket-leader": "^0.1.2"
   },

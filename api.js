@@ -33,7 +33,7 @@ class Tinkerhub {
 	}
 
 	get() {
-		return this[layerSymbol].apply(this[layerSymbol], arguments);
+		return this[layerSymbol].get.apply(this[layerSymbol], arguments);
 	}
 
 	all() {
