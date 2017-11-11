@@ -26,7 +26,8 @@
     "msgpack-lite": "^0.1.26",
     "p-any": "^1.1.0",
     "p-settle": "^2.0.0",
-    "tinkerhub-mdns": "^0.1.0",
+    "tinkerhub-discovery": "^0.2.0",
+    "tinkerhub-mdns": "^0.2.0",
     "unix-socket-leader": "^0.1.2"
   },
   "devDependencies": {
