@@ -19,16 +19,15 @@
   "dependencies": {
     "amounts": "^0.4.0",
     "appliances": "^0.1.0",
+    "ataraxia": "^0.2.1",
+    "ataraxia-local": "^0.2.0",
+    "ataraxia-tcp": "^0.2.0",
     "debug": "^3.1.0",
-    "end-of-stream": "^1.4.0",
     "eventemitter2": "^4.1.2",
     "is-mergeable-object": "^1.1.0",
-    "msgpack-lite": "^0.1.26",
     "p-any": "^1.1.0",
     "p-settle": "^2.0.0",
-    "tinkerhub-discovery": "^0.2.0",
-    "tinkerhub-mdns": "^0.2.0",
-    "unix-socket-leader": "^0.1.2"
+    "tinkerhub-discovery": "^0.2.0"
   },
   "devDependencies": {
     "eslint": "^4.6.1",
