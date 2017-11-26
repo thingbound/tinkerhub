@@ -23,7 +23,6 @@
     "ataraxia-services": "^0.4.1",
     "ataraxia-tcp": "^0.4.1",
     "debug": "^3.1.0",
-    "is-mergeable-object": "^1.1.0",
     "p-any": "^1.1.0",
     "p-settle": "^2.0.0",
     "tinkerhub-discovery": "^0.3.0"
