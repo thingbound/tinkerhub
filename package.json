@@ -1,8 +1,8 @@
 {
   "name": "tinkerhub",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "MIT",
-  "description": "Connect your devices together and tinker with them",
+  "description": "Connect your things together and tinker with them",
   "repository": "tinkerhub/tinkerhub",
   "main": "index.js",
   "scripts": {
