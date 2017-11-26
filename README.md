@@ -1,33 +1,24 @@
 # Tinkerhub
 
-Tinkerhub is a home automation library that connects your devices and lets you
-tinker with them. This repository contains the main library for discovering,
-registering and interacting with devices.
+Tinkerhub is a library for building, connecting, interacting and tinkering with
+things on your local network. It can be used for home automation, such as
+turning appliances on and off, monitoring sensor data and other IoT workloads.
 
-To interact with your devices have a look at [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli).
+The base of Tinkerhub is a network in which a library can choose to expose
+things and appliances, such as lights, sensors and services. Any NodeJS
+instance connected to the network can then see and interact with these things.
 
-## Installing
+To interact with your things have a look at [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli).
+
+## Getting started and joining the local network
 
 Tinkerhub requires at least Node 6.0.0.
 
-If you are setting up your local network simply install `tinkerhub` and any
-devices you need:
+To get started install the `tinkerhub` library:
 
 ```
-npm install --save tinkerhub
-npm install --save tinkerhub-device-you-want-here
+npm install tinkerhub
 ```
-
-If you are building a device it is recommended that you have `tinkerhub` as
-a peer dependency in `package.json`:
-
-```
-"peerDependencies": {
-  "tinkerhub": "^1.0.0"
-},
-```
-
-## Joining the Tinkerhub network
 
 Tinkerhub will automatically connect to other instances on the same local
 network and make their devices available to the local instance. This is done
@@ -38,80 +29,82 @@ automatically on `require('tinkerhub')`.
 const th = require('tinkerhub');
 ```
 
-## Automatically loading modules
+## Discovering things
 
-Call `th.autoload()` to load any modules with a name starting with `tinkerhub`.
-This is provided as an easy way of loading any locally installed modules and
-should not be used when building devices.
-
-## Discovering devices
-
-Devices can join or leave the network at any time. It's possible to listen
-to `device:available` and `device:unavailable` to be notified when this happens.
+Things can join or leave the network at any time. It's possible to listen
+to `available` and `unavailable` to be notified when this happens.
 
 ```javascript
-th.devices.on('device:available', function(device) {
-	console.log('New device', device);
-})
-```
-
-If you know the identifier of a given device you can fetch it via the `getSpecific`
-function.
-
-```javascript
-const device = th.devices.getSpecific('deviceIdHere');
-console.log('Got ', device);
-```
-
-In most cases it's probably easier to use device collection to find devices.
-Collections can be created from tags or from a custom filter function.
-
-```javascript
-// Get all devices
-const allDevices = th.devices.all();
-
-// Fetch devices via one or more tags
-const lights = th.devices.get('type:light');
-
-// Filter via a function when a new device is available
-const devicesWithStatusAction = th.devices.get(function(device) {
-	return device.metadata.actions[status];
+th.on('available', thing => {
+  console.log('New thing', thing);
 });
 ```
 
-Collections also support the `device:available` and `device:unavailable` events.
-
-## Working with devices and collections
-
-### Metadata for an individual device
-
-Devices have metadata associated with them, which contains information about
-their unique identifier, their type and capabilities and the actions they
-support.
+The library provides access to everything it can reach via collections. A
+collection is a filtered view of things on the current network.
 
 ```javascript
-console.log(device.metadata.id); // "idOfDevice"
-console.log(device.metadata.name); // "Human-readable name if any"
-console.log(device.metadata.types); // [ 'light', 'otherType' ]
-console.log(device.metadata.capabilities); // [ 'dimmable', 'colors' ]
+// Get everything
+const allDevices = th.all();
+
+// Filter things based on types, capabilities and tags
+const lights = th.get('type:light');
 ```
 
-A device may be of one or more types, meaning it fulfills the API of those
-types. For example a device with type `light` should support `turnOn` and
-`turnOff`.
+Collections also support the `available` and `unavailable` events.
 
-Capabilities are softer and indicate extended functions a certain device
-supports. For a light this might be that it is dimmable and for a media player
-it might be that it support video.
+```javascript
+const switchableLights = th.get('type:light', 'cap:switchable');
+
+switchableLights.on('available', light => console.log('Found a light', light));
+
+switchableLights.destroy(); // Destroy the collection and remove all listeners
+```
+
+## Interacting with things
+
+All things have metadata associated with them, which contains information about
+their unique identifier, name (if any), types and capabilities.
+
+```javascript
+console.log(thing.metadata.id); // "idOfDevice"
+console.log(thing.metadata.name); // "Human-readable name if any"
+console.log(thing.metadata.types); // Set [ 'light', 'otherType' ]
+console.log(thing.metadata.capabilities); // Set [ 'dimmable', 'colors' ]
+console.log(thing.metadata.tags); // Set [ 'livingroom', 'type:light', 'cap:dimmable' ]
+```
+
+Types and capabilities are used to indicate what a thing is and what it is
+capable of doing. Most things you will encounter use a standarized API that
+is defined in another project called [Appliances](https://github.com/tinkerhub/appliances).
+
+### Performing actions
+
+All things support actions, which can be invoked as normal JavaScript functions.
+Actions in Tinkerhub always return a promise that will resolve to the
+result of the invocation.
+
+```javascript
+ // Turn on the thing on asynchronously
+thing.turnOn()
+  .then(power => console.log('Power is now', power));
+
+// Collections work the same but return a mulit result
+th.get('type:light')
+  .turnOn()
+  .then(result => console.log('Power is mostly', result.mostlyTrue()));
+```
 
 ### Listening for events
 
-Devices  support events, which can easily be listened for via `on`.
+Most things also emit events whenever things change. These can be listened
+to via `on`:
 
 ```javascript
 // Start listening
-const handle = device.on('power', function(power) {
-	// Device has either been turned on or off
+const handle = thing.on('power', event => {
+  // Device has either been turned on or off
+  console.log('Power of', event.source, 'is now', event.value);
 });
 
 // To stop listening
@@ -122,211 +115,146 @@ The same is true for collections, where an event will be trigged if any
 device in the collection emits an event:
 
 ```javascript
-th.devices.get('type:light').on('power', function(power) {
-	// this refers to the device
-	th.time.in('30s')
-		.then(this.turnOff);
+th.get('type:light').on('power', event => {
+  // this refers to the device
+  th.time.in('30s')
+    .then(event.source.turnOff);
 });
 ```
 
-### Performing actions
+## Building a thing
 
-All devices support actions, which can be invoked on both devices and
-collections:
+Things in Tinkerhub are based on the library [abstract-things](https://github.com/tinkerhub/appliances).
+More specific types and capabilities are available in [Appliances](https://github.com/tinkerhub/appliances),
+such as sensors, lights, humidifiers, switches and so on.
 
-```javascript
-device.turnOn(); // Turn on the device asynchronously
-
-th.devices.tagged('type:light').turnOn(); // Turns on all devices
-```
-
-Actions return promises (via [Q](http://documentup.com/kriskowal/q/)) that
-can be used to act on the result of the invocation.
+A very basic thing may look something like this:
 
 ```javascript
-device.state()
-	.then(function(state) {
-		console.log('state is', state);
-	});
+const th = require('tinkerhub');
+const { Thing } = require('abstract-things');
+const { duration } = require('abstract-things/values');
 
-th.devices.get('type:light').state()
-	.then(function(result) {
-		console.log(result);
-		console.log(result.firstValue);
-		console.log(result['deviceIdHere']);
-	});
+/**
+ * Timer that calls itself `timer:global` and that allows timers to be set
+ * and listened for in the network.
+ */
+class Timer extends Thing {
+  static get type() {
+    return 'timer';
+  }
+
+  constructor() {
+    super();
+
+    this.id = 'timer:global';
+  }
+
+  addTimer(name, delay) {
+    if(! name) throw new Error('Timer needs a name');
+    if(! delay) throw new Error('Timer needs a delay');
+
+    delay = duration(delay);
+
+    setTimeout(() => {
+      this.emitEvent('timer', name);
+    }, delay.ms)
+  }
+}
+
+// Register the timer
+th.register(new Timer());
 ```
 
-## Creating a device
+## Organizing Things
 
-Devices are created by binding an object to a unique device id. Device ids must be prefixed with a namespace, such as `module:id`, for example `hue:00FFCC33DD` or `chromecast:TV`.
-
-When a device is registered it is made available over the network, so devices
-should only be registered when they are actually available.
-
-```javascript
-th.devices.register('test:uniqueId', {
-	metadata: {
-		name: 'Test Device',
-		type: 'deviceType',
-		capabilities: [ 'status' ]
-	},
-
-	say: function(message) {
-		console.log('Someone told me to say:', message);
-	},
-
-	state: function() {
-		return _privateStateHelper();
-	},
-
-	_privateStateHelper: function() {
-		return { ... };
-	}
-})
-```
-
-### Metadata
-
-The property `metadata` is special and is used to define extra information about
-the device, this includes the `type` and `capabilities` of the device.
-
-Both `type` and `capabilities` can be either a single string or an array of string.
-
-A name for the device can also be defined via the `name` property.
-
-### Private functions and properties
-
-Anything prefixed with `_` will be treated as private and will not be invokable
-over the network.
-
-### Types and capabilities
-
-Tinkerhub supports registering contracts on how different types of devices work.
-This is used to create a uniform API for devices of the same type, for example
-a device that is a light can always be turned on or off.
-
-Certain capabilities also have contracts that apply regardless of the device type,
-these are currently `state` and `power`.
-
-These contracts are checked when a device is registered and Tinkerhub will
-refuse to register the device if it finds any errors.
-
-Registration of new types can be done via the type registry, here is an example
-of a type `cookie-jar`:
-
-```javascript
-th.types.registerDeviceType('cookie-jar')
-	.action('open').done()
-	.action('close').done()
-	.action('setOpen').argument('boolean', 'If the jar should be open').done()
-	.action('isOpen').returns('boolean', 'If the jar is open or not').done()
-	.done();
-```
-
-It is possible to specify that certain actions are only available when the
-device also has a certain capability as well as enforcing that a certain
-device type always has a capability. This is how one might define a light that
-may be dimmable:
-
-```javascript
-th.types.registerDeviceType('light')
-	.requireCapability('state', 'power')
-	.when('dimmable')
-		.action('setBrightness')
-			.argument('percentage', 'Brightness Percentage')
-			.returns('object', 'The new state')
-			.done()
-		.action('increaseBrightness')
-			.argument('percentage', 'Percentage to increase')
-			.returns('object', 'The new state')
-			.done()
-		.action('decreaseBrightness')
-			.argument('percentage', 'Percentage to decrease')
-			.returns('object', 'The new state')
-			.done()
-		.done()
-	.done();
-```
-
-Any `light`-devices registered that define that they have the capability
-`dimmable` will then be checked so that the dimmable actions are defined.
-
-Tinkerhub comes with a few default types that can be found in
-[lib/device/types](https://github.com/tinkerhub/tinkerhub/tree/master/lib/device/types/devices)
-and [lib/device/capabilities.js](https://github.com/tinkerhub/tinkerhub/blob/master/lib/device/types/capabilities.js).
-
-### Values
-
-When registering types and capabilities the value of arguments and return types
-can be specified.
-
-```javascript
-th.values.color('#fba');
-
-th.values.length('2 m');
-th.values.length(2); // Defaults to meters
-
-// Many types support conversions between units:
-th.values.duration(2000).seconds;
-```
-
-The basic value types are: `string`, `number`, `percentage`, `array`, `object`
-and `buffer`.
-
-There are a few built-in value types that can be used which help with things
-such as unit conversion. These are currently: `angle`, `color`, `duration`,
-`energy`, `illuminance`, `length`, `mass`, `power`, `pressure`, `speed`,
-`temperature` and `volume`.
-
-## Tags
-
-Devices support user defined tags via their metadata. These tags are persisted
-on the same machine as a device is registered. In the API tags are merged with
+Things support user defined tags via their metadata. These tags are persisted
+on the same machine as a thing is registered. In the API tags are merged with
 system generated tags such as type tags and capability tags.
 
-This can be used to create groups of devices, such as all devices found in a
+This can be used to create groups of things, such as all things found in a
 certain room. This allows for things such as this:
 
 ```javascript
-// Fetch lights in the livingroom and turn the om
-th.devices.get('type:light', 'room:livingroom').turnOn();
-
-// Log all devices found in livingroom
-console.log(th.devices.get('room:livingroom'));
+// Fetch lights in the living room and turn them on
+th.get('type:light', 'living-room').turnOn();
 ```
 
-### Modify tags via the API
-
-The device metadata object contains an API that can be used to the user defined
+The thing metadata object contains an API that can be used to the user defined
 tags of a device. Currently the prefixes `type:` and `cap:` are reserved.
 
 ```javascript
-console.log(device.metadata.tags); // Get all of the tags
+console.log(thing.tags); // Get all of the tags
 
-device.metadata.tag('tag1', ..., 'tagN'); // Add tags to the device
+thing.metadata.addTags('tag1', ..., 'tagN'); // Add tags to the thing
 
-device.metadata.removeTag('tag1', ..., 'tagN'); // Remove tags from the device
+thing.metadata.removeTags('tag1', ..., 'tagN'); // Remove tags from the thing
 ```
 
-## Extending devices
+The easiest way to tag upp things is to use [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli)
+and simply do `deviceIdOrTag metadata tag nameOfTag`.
 
-It's possible to automatically extend devices as they become available, which
-is useful for generic devices such as those registered via bridges.
+## Extending things in the network
+
+Tinkerhub automatically merges things with the same identifier which allows
+one instance to be extended with new capabilities by other libaries.
+
+This is primarily used together with plugins that bridge in things, such
+as Bluetooth peripherals or Z-wave devices. This allows the bridge to provide
+a generic API and other libraries to extend these things and make them in to
+specific types.
 
 ```javascript
-th.devices.extend([ 'type:bluetooth-low-energy' ], function(encounter) {
-	encounter.device.bleInspect()
-		.then(def => {
-			if(def.services[SOME_SERVICE]) {
-				const newDevice = encounter.enhance({
-					metadata: {
-						type: 'more-specific-type'
-					},
+/*
+ * Get all Bluetooth Low Energy devices that are connected and extend them
+ * if they support a certain type.
+ */
+th.get('type:bluetooth-low-energy', 'cap:ble-connected')
+  .extendWith(thing => thing.bleInspect()
+    .then(data => {
+      if(! data.services[SOME_SERVICE_ID]) return;
 
-					... actions
-				});
-			}
-		});
+      return new SpecificThing(thing)
+        .init();
+    })
+  );
 });
+```
+
+## Network
+
+Tinkerhub creates a mesh network between instances. It is possible to use
+the library in several NodeJS instances on a single machine. Tinkerhub will
+manage the connections to other machines so that only a single network connection
+between machines exist.
+
+A network may come to look a bit like this, where each machine connect to
+each other machine, but instances within a machine mainly connect to
+themselves.
+
+```
++------------------+
+|Machine #1        |
+|                  |
+| +--+     +--+    |
+| |  +-----+  +--------+         +------------------+
+| +--+     +-++    |   |         |Machine #2        |
+|            |     |   |         |                  |
++------------------+   |         | +--+             |
+             +---------------------+  |             |
+                       |         | ++-+             |
+                       |         |  |               |
+                       |         +------------------+
+                       |            |
+       +---------------------+      |
+       |Machine #3     |     |      |
+       |               |     |      |
+       |  +--+        ++-+   |      |
+       |  |  +--------+  +----------+
+       |  +--+        ++-+   |
+       |               |     |
+       |       +--+    |     |
+       |       |  +----+     |
+       |       +--+          |
+       +---------------------+
 ```
