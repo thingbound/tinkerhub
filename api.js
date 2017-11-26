@@ -1,6 +1,6 @@
 'use strict';
 
-const Services = require('./lib/services');
+const Services = require('ataraxia-services');
 const ServiceLayer = require('./lib/service-layer');
 
 const limits = require('./lib/events/limits');
