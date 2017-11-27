@@ -1,6 +1,6 @@
 {
   "name": "tinkerhub",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "license": "MIT",
   "description": "Connect your things together and tinker with them",
   "repository": "tinkerhub/tinkerhub",
@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "abstract-things": "^0.1.0",
-    "ataraxia": "^0.4.1",
-    "ataraxia-local": "^0.4.1",
-    "ataraxia-services": "^0.4.1",
-    "ataraxia-tcp": "^0.4.1",
+    "ataraxia": "^0.4.4",
+    "ataraxia-local": "^0.4.4",
+    "ataraxia-services": "^0.4.4",
+    "ataraxia-tcp": "^0.4.4",
     "debug": "^3.1.0",
     "p-any": "^1.1.0",
     "p-settle": "^2.0.0",
