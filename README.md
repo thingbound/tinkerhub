@@ -8,7 +8,10 @@ The base of Tinkerhub is a network in which a library can choose to expose
 things and appliances, such as lights, sensors and services. Any NodeJS
 instance connected to the network can then see and interact with these things.
 
-To interact with your things have a look at [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli).
+To setup a network the easiest way is to install
+[tinkerhub-daemon](https://github.com/tinkerhub/tinkerhub-daemon) to host plugins
+and to use [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli) to
+interact with them.
 
 ## Getting started and joining the local network
 
@@ -89,9 +92,9 @@ result of the invocation.
 thing.turnOn()
   .then(power => console.log('Power is now', power));
 
-// Collections work the same but return a mulit result
+// Collections work the same but return a multi result
 th.get('type:light')
-  .turnOn()
+  .power()
   .then(result => console.log('Power is mostly', result.mostlyTrue()));
 ```
 
@@ -102,9 +105,9 @@ to via `on`:
 
 ```javascript
 // Start listening
-const handle = thing.on('power', event => {
+const handle = thing.on('power', (power, thing) => {
   // Device has either been turned on or off
-  console.log('Power of', event.source, 'is now', event.value);
+  console.log('Power of', thing, 'is now', power);
 });
 
 // To stop listening
@@ -112,15 +115,17 @@ handle.stop();
 ```
 
 The same is true for collections, where an event will be trigged if any
-device in the collection emits an event:
+thing in the collection emits an event:
 
 ```javascript
-th.get('type:light').on('power', event => {
-  // this refers to the device
-  th.time.in('30s')
-    .then(event.source.turnOff);
-});
+const collection = th.get('type:light')
+  .on('power', (power, thing) => {
+    setTimeout(() => thing.turnOff(), 30000);
+  });
 ```
+
+Note: Collections do not return a event handles, the easiest way to stop
+listening for events on a collection is to call `destroy()` on it.
 
 ## Building a thing
 
