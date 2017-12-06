@@ -18,4 +18,4 @@ module.exports = function(network) {
 	//Object.defineProperty(result, 'time', { value: time });
 	//Object.defineProperty(result, 'limits', { value: limits });
 	return result;
-}
+};
