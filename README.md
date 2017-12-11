@@ -15,7 +15,7 @@ interact with them.
 
 ## Getting started and joining the local network
 
-Tinkerhub requires at least Node 6.0.0.
+Tinkerhub requires at least Node 6.6.0.
 
 To get started install the `tinkerhub` library:
 
@@ -35,10 +35,10 @@ const th = require('tinkerhub');
 ## Discovering things
 
 Things can join or leave the network at any time. It's possible to listen
-to `available` and `unavailable` to be notified when this happens.
+to `thing:available` and `thing:unavailable` to be notified when this happens.
 
 ```javascript
-th.on('available', thing => {
+th.on('thing:available', thing => {
   console.log('New thing', thing);
 });
 ```
@@ -54,14 +54,21 @@ const allDevices = th.all();
 const lights = th.get('type:light');
 ```
 
-Collections also support the `available` and `unavailable` events.
+Collections also support the `thing:available` and `thing:unavailable` events.
 
 ```javascript
 const switchableLights = th.get('type:light', 'cap:switchable');
 
-switchableLights.on('available', light => console.log('Found a light', light));
+switchableLights.on('thing:available', light => console.log('Found a light', light));
 
 switchableLights.destroy(); // Destroy the collection and remove all listeners
+```
+
+The event `thing:updated` can be used to listen for updates, such as changes
+in name, tags, type or capabilities:
+
+```javascript
+switchableLights.on('thing:updated', light => console.log('Light has changed', light));
 ```
 
 ## Interacting with things
@@ -127,6 +134,34 @@ const collection = th.get('type:light')
 Note: Collections do not return a event handles, the easiest way to stop
 listening for events on a collection is to call `destroy()` on it.
 
+### Waiting for things
+
+Tinkerhub connects asynchronously and things can be found at any time so
+scripting can be difficult if you just want to perform an action or two.
+Something like this will fail if run via `node script.js`:
+
+```javascript
+const th = require('tinkerhub');
+
+th.get('type:light').turnOff(); // Don't do this, the collection will be empty
+```
+
+A special function named `awaitThings` is available for collections that will
+wait until things are mostly available:
+
+```javascript
+const th = require('tinkerhub');
+
+th.get('type:light')
+  .awaitThings()
+  .then(things => things.turnOff())
+  .catch(th.errorHandler);
+  .then(() => process.exit()) // To exit Node
+```
+
+This will wait in chunks of 500 ms for things to be found. After a few seconds
+it will resolve even if no things have been found.
+
 ## Building a thing
 
 Things in Tinkerhub are based on the library [abstract-things](https://github.com/tinkerhub/appliances).
@@ -168,7 +203,9 @@ class Timer extends Thing {
 }
 
 // Register the timer
-th.register(new Timer());
+th.register(new Timer())
+  .then(handle => /* handle.remove() can be used to remove thing */)
+  .catch(th.errorHandler);
 ```
 
 ## Organizing Things
@@ -199,6 +236,33 @@ thing.metadata.removeTags('tag1', ..., 'tagN'); // Remove tags from the thing
 The easiest way to tag upp things is to use [tinkerhub-cli](https://github.com/tinkerhub/tinkerhub-cli)
 and simply do `deviceIdOrTag metadata tag nameOfTag`.
 
+### Advanced matching
+
+Advanced matching is supported via `th.match` for example to match all lights
+that are not tagged with `living-room`:
+
+```javascript
+// Get lights not tagged with living-room
+th.get('type:light', th.match.not('living-room'))
+```
+
+`th.match.or` and `th.match.and` can be used to get things using more advanced
+queries:
+
+```javascript
+// Get things that are either lights or air purifiers
+th.get(th.match.or('type:light', 'type:air-purifier'));
+
+// Get things that are either lights or air purifiers that can switch their power
+th.get(th.match.or('type:light', 'type:air-purifier'), 'cap:switchable-power');
+
+// Either lights that can switch their power or things with switchable mode
+th.get(th.match.or(
+  th.match.and('type:light', 'cap:switchable-power'),
+  'cap:switchable-mode'
+));
+```
+
 ## Extending things in the network
 
 Tinkerhub automatically merges things with the same identifier which allows
@@ -219,12 +283,115 @@ th.get('type:bluetooth-low-energy', 'cap:ble-connected')
     .then(data => {
       if(! data.services[SOME_SERVICE_ID]) return;
 
-      return new SpecificThing(thing)
-        .init();
+      return new SpecificThing(thing);
     })
   );
 });
 ```
+
+## Handling errors
+
+Most things in Tinkerhub return promises and `catch` should be used to handle
+errors from all promises. There are three main ways errors should be handled:
+
+1. Catch the error - but only if you can recover. Catching errors is usually done for non-important errors that can be recovered from by doing things such as retrying requests.
+
+
+  ```javascript
+  function doBackgroundStuff() {
+    getPromiseSomehow()
+      .then(result => /* handle result as normal */)
+      .catch(err => setTimeout(doBackgroundStuff, 1000); // Retry every second until it succeeds (use a better retry strategy)
+  }
+  ```
+
+2. Ignore the error - but only if you return a promise (or similar). This allows for example another consumer to handle the error in a better way.
+
+  ```javascript
+  function doStuff() {
+    return getPromiseSomehow()
+      .then(result => /* handle and manipulate results */)
+  }
+  ```
+
+3. Log the error - when the error isn't that important or you can't recover from it. A utility is available that will do this: `th.errorHandler`.
+
+  ```javascript
+  function doStuff() {
+    return getPromiseSomehow()
+      .then(result => /* handle and manipulate results */)
+      .catch(th.errorHandler);
+  }
+
+  // Or when registering a thing:
+  th.register(new Thing())
+    .then(handle => /* handle points to the thing so it can be removed */)
+    .catch(th.errorHandler);
+  ```
+
+### Development helper
+
+When developing a plugin or custom behavior Tinkerhub contains a utility that
+will log and output errors from things such as unhandled promise rejections.
+To activate it, put something like this in the main file of the project:
+
+```javascript
+if(! module.parent) {
+  // Only activate development mode if this file was run directly via `node nameOfFile.js`
+  th.errorHandler.development();
+}
+```
+
+This will turn on logging to the console for the namespace `th:error`. Any
+uncaught promise rejection or call to `th.errorHandler` will be displayed in
+full.
+
+## Debug logging
+
+Tinkerhub uses [debug](https://github.com/visionmedia/debug) for debug logging.
+Internal Tinkerhub-things live in the namespace `th` and things belong to the
+namespace `things`. Logging for both can be activated with `th*`:
+
+```
+$ DEBUG=th\* node fileToRun.js
+```
+
+Other interesting namespaces include the `ataraxia` which outputs information
+about the network and `dwaal` that outputs information about the key-value
+storage used by things (via [abstract-things](https://github.com/tinkerhub/appliances)).
+
+## State handling
+
+State is important in Tinkerhub, most things will have the capability `state`.
+State can be read and inspected by calling the `state()` action:
+
+```javascript
+collection.state()
+  .then(state => console.log('State is', state));
+```
+
+Things can also advertise that they are capabable of capturing and restoring
+state via the capability `restorable-state`. Things that are restorable will
+have these three actions available:
+
+* `restorableState(): Array[string]` - Get all of the state keys that can be restored.
+* `captureState(): Object` - Capture the current state as an object.
+* `setState(Object)` - Set the state of the thing.
+
+To capture and restore the state the extra functions `captureState(collection)`
+and `restoreState(collection, state)` are available in `tinkerhub/state`:
+
+```javascript
+const { captureState, restoreState } = require('tinkerhub/state');
+```
+
+An example of using capturing and restoring could be doing something like this:
+
+```javascript
+const th = require('tinkerhub');
+const { captureState, restoreState } = require('tinkerhub/state');
+
+th.get('')
 
 ## Network
 
