@@ -385,13 +385,43 @@ and `restoreState(collection, state)` are available in `tinkerhub/state`:
 const { captureState, restoreState } = require('tinkerhub/state');
 ```
 
-An example of using capturing and restoring could be doing something like this:
+An example of using capturing and restoring could be doing something like this
+to capture the state of lights, turn them off and a few seconds after restore
+their original state:
 
 ```javascript
 const th = require('tinkerhub');
 const { captureState, restoreState } = require('tinkerhub/state');
 
-th.get('')
+let capturedState;
+let lights = th.get('type:light', 'cap:restorable-state')
+
+lights.awaitThings()
+  
+  // When lights are available, capture their state
+  .then(() => captureState(lights))
+  
+  // Handle the state and request lights to be turned off
+  .then(state => {
+    capturedState = state;
+    return lights.turnOff();
+  })
+
+  // Set a timeout for restoring the state five seconds after turning off
+  .then(() => setTimeout(() => {
+    // Restore the state
+    restoreState(lights, capturedState)
+
+      // Log any errors
+      .catch(th.errorHandler)
+
+      // Exit the process when state has been restored
+      .then(() => process.exit());
+  }, 5000))
+
+  // Log any errors
+  .catch(th.errorHandler);
+```
 
 ## Network
 
