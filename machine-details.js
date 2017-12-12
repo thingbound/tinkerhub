@@ -9,8 +9,8 @@ const { Thing } = require('abstract-things');
  * machine the service is running on.
  */
 module.exports = Thing.type(Parent => class extends Parent {
-	init() {
-		return super.init()
+	initCallback() {
+		return super.initCallback()
 			.then(machineId)
 			.then(id => {
 				if(! this.id) {
