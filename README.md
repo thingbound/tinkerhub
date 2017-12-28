@@ -86,7 +86,7 @@ console.log(thing.metadata.tags); // Set [ 'livingroom', 'type:light', 'cap:dimm
 
 Types and capabilities are used to indicate what a thing is and what it is
 capable of doing. Most things you will encounter use a standarized API that
-is defined in another project called [Appliances](https://github.com/tinkerhub/appliances).
+is defined in the project called [abstract-things](https://github.com/tinkerhub/abstract-things).
 
 ### Performing actions
 
@@ -164,9 +164,7 @@ it will resolve even if no things have been found.
 
 ## Building a thing
 
-Things in Tinkerhub are based on the library [abstract-things](https://github.com/tinkerhub/appliances).
-More specific types and capabilities are available in [Appliances](https://github.com/tinkerhub/appliances),
-such as sensors, lights, humidifiers, switches and so on.
+Things in Tinkerhub are based on the library [abstract-things](https://github.com/tinkerhub/abstract-things), it contains both generic and specific types and capabilities for things such as sensors, lights, humidifiers, switches and so on.
 
 A very basic thing may look something like this:
 
@@ -358,7 +356,7 @@ $ DEBUG=th\* node fileToRun.js
 
 Other interesting namespaces include the `ataraxia` which outputs information
 about the network and `dwaal` that outputs information about the key-value
-storage used by things (via [abstract-things](https://github.com/tinkerhub/appliances)).
+storage used by things (via [abstract-things](https://github.com/tinkerhub/abstract-things)).
 
 ## State handling
 
