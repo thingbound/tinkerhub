@@ -77,7 +77,6 @@ class Undoable {
 			result[thing] = thingState;
 		}
 
-		console.log(result);
 		this.state = result;
 	}
 
