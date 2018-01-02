@@ -15,7 +15,7 @@ interact with them.
 
 ## Getting started and joining the local network
 
-Tinkerhub requires at least Node 6.6.0.
+Tinkerhub requires at least Node 8.
 
 To get started install the `tinkerhub` library:
 
