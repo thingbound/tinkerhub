@@ -19,6 +19,7 @@ module.exports = function(network) {
 	const result = things.publicApi;
 	Object.defineProperty(result, 'id', { value: network.id });
 	Object.defineProperty(result, 'machineId', { value: machineId });
+	Object.defineProperty(result, 'network', { value: network });
 
 	Object.defineProperty(result, 'match', { value: matchers });
 
