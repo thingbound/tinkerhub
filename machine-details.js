@@ -8,7 +8,7 @@ const { Thing } = require('abstract-things');
  * Mixin that updates the identifier and hostname so that they reflect the
  * machine the service is running on.
  */
-module.exports = Thing.type(Parent => class extends Parent {
+module.exports = Thing.mixin(Parent => class extends Parent {
 	initCallback() {
 		return super.initCallback()
 			.then(machineId)
