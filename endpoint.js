@@ -1,8 +1,8 @@
 'use strict';
 
-const api = require('./api');
+const API = require('./modifiable-api');
 const net = require('./lib/net');
 
-module.exports = api(net({
+module.exports = new API(net({
 	endpoint: true
 }));

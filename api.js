@@ -1,29 +1,66 @@
 'use strict';
 
-
 const Services = require('ataraxia-services');
-const Things = require('./lib/things');
+const Repository = require('./lib/things/repository');
 
 const matchers = require('./lib/things/matchers');
-
 const errorHandler = require('./lib/utils/error-handler');
 
-//const limits = require('./lib/events/limits');
-//const time = require('./lib/utils/time');
+const network = Symbol('network');
+const services = Symbol('services');
+const repository = Symbol('repository');
 
-module.exports = function(network) {
-	const services = new Services(network);
-	const things = new Things(services);
+/**
+ * Public API for Tinkerhub that provides access to the distributed thing
+ * network without support for registering new things.
+ */
+module.exports = class API {
+	constructor(net) {
+		Object.defineProperty(this, network, { value: net });
+		Object.defineProperty(this, services, { value: new Services(net) });
 
-	const result = things.publicApi;
-	Object.defineProperty(result, 'id', { value: network.id });
-	Object.defineProperty(result, 'network', { value: network });
+		const R = this.constructor.Repository || Repository;
+		Object.defineProperty(this, repository, { value: new R(this[services], this) });
+	}
 
-	Object.defineProperty(result, 'match', { value: matchers });
+	/**
+	 * Get the ephemeral identifier of this instance. This is the id generated
+	 * for this client to the distributed network.
+	 *
+	 * @returns {string}
+	 */
+	get id() {
+		return this[network].id;
+	}
 
-	Object.defineProperty(result, 'errorHandler', { value: errorHandler });
+	get match() {
+		return matchers;
+	}
 
-	//Object.defineProperty(result, 'time', { value: time });
-	//Object.defineProperty(result, 'limits', { value: limits });
-	return result;
+	get errorHandler() {
+		return errorHandler;
+	}
+
+	on(event, listener) {
+		return this[repository].on(event, listener);
+	}
+
+	off(event, listener) {
+		return this[repository].off(event, listener);
+	}
+
+	[Symbol.iterator]() {
+		return this[repository][Symbol.iterator]();
+	}
+
+	get(...tags) {
+		return this[repository].get(...tags);
+	}
+
+	all() {
+		return this[repository].all();
+	}
 };
+
+// Export the repository symbol
+module.exports.repository = repository;
